@@ -12,5 +12,5 @@ async def login(user: UserLogin):
     # TODO: 连接数据库，验证用户信息
 
     # 创建访问令牌
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = create_access_token(data={"sub": user.uid})
     return {"access_token": access_token, "token_type": "bearer"}

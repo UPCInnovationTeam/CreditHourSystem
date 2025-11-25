@@ -32,11 +32,14 @@ def get_current_user(token: str = Depends(oauth2_scheme)): # 使用oauth2_scheme
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM]) # 解码token
-        username:str = payload.get("sub")   # 获取用户名, payload是解码后的数据, sub是payload中的字段
-        if username is None:
+        uid:str = payload.get("sub")   # 获取用户名, payload是解码后的数据, sub是payload中的字段
+        if uid is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
 
     # TODO: 从数据库中获取用户信息
-
+    # 测试
+    return {"uid": uid, "name": "张三", "identity": "管理员", "grade": "2021", "major": "软件工程", "class_": "1",
+            "college": "计算机与信息工程学院", "tribeId": [], "activityId": [], "creditHours":
+                {"思想成长": 0, "创新创业": 0, "文体发展": 0, "社会实践与志愿服务": 0, "工作履历与技能培训": 0}}

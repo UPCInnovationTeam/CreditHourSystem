@@ -5,7 +5,7 @@ from app.schemas.credit import CreditHours
 from app.schemas.user import UserBase
 from app.core.security import get_current_user
 
-router = APIRouter(prefix="/credit", tags=["学分管理"])
+router = APIRouter(prefix="/credit", tags=["学时管理"])
 
 @router.get("/", response_model=CreditHours)
 async def get_credit(current_user: UserBase = Depends(get_current_user)):

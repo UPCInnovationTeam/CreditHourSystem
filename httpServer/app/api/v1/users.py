@@ -18,4 +18,12 @@ async def register(user: UserCreate):
     """
     return None # TODO: 用户注册
 
+@router.patch("/me", response_model=UserBase)
+async def update_me(user: UserBase, current_user: UserBase = Depends(get_current_user)):
+    """
+    更新当前用户信息
+    """
+    # TODO: 更新当前用户信息
+    return None
+
 
