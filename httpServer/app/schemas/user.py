@@ -16,9 +16,25 @@ class UserBase(BaseModel):
     activityId: list[str] = None
     creditHours: dict[str, int] = None
 
+    class Config:
+        orm_mode = True
+
 class UserCreate(UserBase):
     """
     密码/注册时间
     """
     password: str
     registerTime: str
+
+    class Config:
+        orm_mode = True
+
+class UserLogin(BaseModel):
+    """
+    学工号/密码
+    """
+    uid: str
+    password: str
+
+    class Config:
+        orm_mode = True
