@@ -8,6 +8,7 @@ from app.api.v1.routes import api_v1_router
 
 from app.models.dbModels import User
 from app.db.database import engine, Base
+from app.core.config import tags_metadata
 
 async def create_tables():
     async with engine.begin() as conn:
@@ -19,11 +20,7 @@ async def lifespan(app: FastAPI):
     yield
     await engine.dispose()
 
-tags_metadata = [
-    {"name": "用户管理","description": "用户管理相关接口",},
-    {"name": "学时管理","description": "学时管理相关接口",},
-    {"name": "认证管理","description": "认证管理相关接口",},
-]
+
 
 app = FastAPI(
     title="学时管理系统",

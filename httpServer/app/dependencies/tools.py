@@ -1,7 +1,6 @@
 import smtplib
 from email.mime.text import MIMEText
 import random
-
 from app.core.config import sender_email
 from app.core.config import sender_email_pwd as password
 

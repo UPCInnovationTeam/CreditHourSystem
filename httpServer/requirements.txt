@@ -2,3 +2,6 @@ sqlalchemy
 python-jose
 pydantic
 fastapi
+uvicorn
+asyncpg
+qrcode[pil]
