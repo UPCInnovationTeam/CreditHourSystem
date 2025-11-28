@@ -16,3 +16,4 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 SQLALCHEMY_DATABASE_URL = "postgresql+asyncpg://postgres:password@localhost/creditHourSystem"
 # 签到签退二维码链接
 qrcode_url = f"http://127.0.0.1:8000/api/v1/qrcode/"
+qr_window_seconds = 300  #二维码有效时间，单位秒
