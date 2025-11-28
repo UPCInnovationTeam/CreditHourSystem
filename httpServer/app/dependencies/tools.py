@@ -2,7 +2,10 @@ import smtplib
 from email.mime.text import MIMEText
 import random
 
-def send_verify_code(email_target: str) -> str:
+from app.core.config import sender_email
+from app.core.config import sender_email_pwd as password
+
+def send_verify_code(email_target: str) -> str | None:
     """
     这是一个发送验证码的函数，通过邮箱发送
     :param email_target: 接受验证码的邮箱
@@ -13,9 +16,7 @@ def send_verify_code(email_target: str) -> str:
     #设置SMTP服务器信息（163邮箱服务器）
     smtp_server = 'smtp.163.com'
     port = 25
-    sender_email = "19862266073@163.com"
     receiver_email = email_target
-    password = "KNxM5LZHRWjZyXYW"
 
     #邮件内容
     message = MIMEText(f'您的验证码是{verify_code}')

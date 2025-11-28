@@ -1,3 +1,4 @@
+sqlalchemy
 python-jose
 pydantic
 fastapi
