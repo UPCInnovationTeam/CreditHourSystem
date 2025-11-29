@@ -3,8 +3,44 @@ from email.mime.text import MIMEText
 import random
 from app.core.config import sender_email
 from app.core.config import sender_email_pwd as password
+from typing import Dict, Tuple
+import time
+import threading
 
-def send_verify_code(email_target: str) -> str | None:
+records: dict[str, Tuple[str, float]] = {}
+
+
+def clean_expired_records(expiration_time: int = 300):
+    """
+    清理过期的验证码记录
+    :param expiration_time: 过期时间（秒），默认300秒（5分钟）
+    """
+    current_time = time.time()
+    expired_emails = [
+        email for email, (_, timestamp) in records.items()
+        if current_time - timestamp > expiration_time
+    ]
+
+    for email in expired_emails:
+        del records[email]
+
+    # print(f"清理了 {len(expired_emails)} 条过期记录")
+
+    # 设置下一个定时清理任务
+    timer = threading.Timer(60, clean_expired_records, kwargs={'expiration_time': expiration_time})
+    timer.daemon = True
+    timer.start()
+
+def verify_code(email_target: str, verify_code_: str) -> bool:
+    """
+    验证验证码和邮箱是否匹配
+    :param email_target: 被验证的目标邮箱
+    :param verify_code_: 被验证的验证码
+    :return: 验证是否通过
+    """
+    return verify_code_ == records.get(email_target or ("", 0))[0]
+
+async def send_verify_code(email_target: str) -> str | None:
     """
     这是一个发送验证码的函数，通过邮箱发送
     :param email_target: 接受验证码的邮箱
@@ -30,6 +66,7 @@ def send_verify_code(email_target: str) -> str | None:
         server.login(sender_email, password)
         server.sendmail(sender_email, receiver_email, message.as_string())
         server.quit()
+        records[email_target] = (verify_code, time.time())
         return verify_code
     except Exception as e:
         print(f"发送邮件失败：{e}")

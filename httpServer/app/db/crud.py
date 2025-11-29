@@ -3,14 +3,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.dbModels import User
 from app.schemas.user import UserBase,UserCreate,UserLogin
 
+
 async def create_user(db: AsyncSession, user: UserCreate):
-    # TODO: 添加邮箱验证功能
     # TODO: 密码哈希
+    user.identity = "使用者"
+    del user.email
+    del user.code
     db_user = User(**user.model_dump())
     db.add(db_user)
     await db.commit()
     await db.refresh(db_user)
-    return db_user
+    return UserBase(**user.model_dump())
 
 async def get_user(db: AsyncSession, uid: str):
     """

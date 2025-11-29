@@ -23,8 +23,10 @@ class UserCreate(UserBase):
     """
     密码/注册时间
     """
+    email: str
     password: str
     registerTime: str
+    code: str
 
     class Config:
         orm_mode = True

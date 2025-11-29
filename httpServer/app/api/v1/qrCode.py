@@ -130,6 +130,8 @@ async def checkin_qr(
     :param timestamp: 时间戳
     :return: 验证结果
     """
+    # TODO: 验证UID是否为活动管理员
+
     # 验证时间戳是否有效
     if not is_timestamp_valid(timestamp):
         raise HTTPException(status_code=400, detail="二维码已过期")
@@ -157,6 +159,8 @@ async def checkout_qr(
     :param timestamp: 时间戳
     :return: 验证结果
     """
+    # TODO: 验证UID是否为活动管理员
+
     # 验证时间戳是否有效
     if not is_timestamp_valid(timestamp):
         raise HTTPException(status_code=400, detail="二维码已过期")

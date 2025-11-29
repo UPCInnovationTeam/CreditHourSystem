@@ -6,9 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 from app.api.v1.routes import api_v1_router
 
-from app.models.dbModels import User
 from app.db.database import engine, Base
 from app.core.config import tags_metadata
+
+from app.dependencies.tools import clean_expired_records
 
 async def create_tables():
     async with engine.begin() as conn:
@@ -16,11 +17,10 @@ async def create_tables():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    clean_expired_records() # 定时清理验证码
     await create_tables()
     yield
     await engine.dispose()
-
-
 
 app = FastAPI(
     title="学时管理系统",
