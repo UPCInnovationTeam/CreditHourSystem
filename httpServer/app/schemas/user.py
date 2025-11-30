@@ -24,7 +24,7 @@ class UserCreate(UserBase):
     密码/注册时间
     """
     email: str
-    password: str
+    password: str | bytes
     registerTime: str
     code: str
 

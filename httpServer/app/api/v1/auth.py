@@ -5,6 +5,8 @@ from app.schemas.user import UserLogin
 from app.db.database import get_db
 from app.db.crud import login as login_db
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.dependencies.tools import hash_password, verify_password
+
 
 router = APIRouter(prefix="/auth", tags=["认证管理"])
 
@@ -13,9 +15,8 @@ async def login(user_: UserLogin, db: AsyncSession = Depends(get_db)):
     """
     用户登录
     """
-    # TODO: 连接数据库，验证用户信息
-    user = await login_db(db, user_)
-    if user is None:
+    user = await login_db(db, user_)    # 从数据库中获取用户信息
+    if user is None or not verify_password(user_.password, user.password):
         raise HTTPException(status_code=400, detail="用户名或密码错误")
 
     # 创建访问令牌

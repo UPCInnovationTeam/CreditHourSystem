@@ -1,6 +1,6 @@
 # app\main.py
 from contextlib import asynccontextmanager
-
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
@@ -15,8 +15,12 @@ async def create_tables():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("服务器启动中...")
     clean_expired_records() # 定时清理验证码
     await create_tables()
     yield
@@ -42,3 +46,13 @@ app.include_router(api_v1_router,prefix="/api/v1")
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=False
+    )

@@ -6,9 +6,19 @@ from app.core.config import sender_email_pwd as password
 from typing import Dict, Tuple
 import time
 import threading
+from passlib.context import CryptContext
+import hashlib
 
 records: dict[str, Tuple[str, float]] = {}
 
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+
+# 注册时 - 密码哈希与存储
+def hash_password(password_: str) -> str:
+    return pwd_context.hash(password_)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 def clean_expired_records(expiration_time: int = 300):
     """
