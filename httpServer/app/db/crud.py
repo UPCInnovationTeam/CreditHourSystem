@@ -20,7 +20,7 @@ async def create_user(db: AsyncSession, user: UserCreate):
     user.identity = "使用者"
     user.registerTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     user.tribeId = []
-    user.activityId = []
+    user.activityId = {}
     user.creditHours = {"mentalGrowth": 0, "innovation": 0, "culturalSports": 0, "socialPractice": 0, "skill": 0}
 
     del user.email

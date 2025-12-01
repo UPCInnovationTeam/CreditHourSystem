@@ -5,7 +5,10 @@ from app.db.database import get_db
 from app.db.crud import create_user
 from app.dependencies.tools import verify_code
 from app.dependencies.tools import send_verify_code
+import logging
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 router = APIRouter(prefix="/user", tags=["用户管理"])
 
@@ -21,6 +24,7 @@ async def register(user: UserCreate, db = Depends(get_db)):
     """
     用户注册
     """
+    logger.info(f"用户注册: {user.activityId}")
     if not verify_code(user.email, user.code):
         raise HTTPException(status_code=400, detail=f"验证码错误")
     return await create_user(db, user)
