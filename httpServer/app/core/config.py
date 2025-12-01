@@ -3,7 +3,8 @@ tags_metadata = [
     {"name": "用户管理","description": "用户管理相关接口",},
     {"name": "学时管理","description": "学时管理相关接口",},
     {"name": "认证管理","description": "认证管理相关接口",},
-    {"name": "二维码","description": "二维码相关接口",}
+    {"name": "二维码","description": "二维码相关接口",},
+    {"name": "石光活动","description": "石光活动相关接口",},
 ]
 # 邮箱
 sender_email = "19862266073@163.com"
