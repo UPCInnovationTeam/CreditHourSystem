@@ -15,7 +15,7 @@ class User(Base):
     class_ = Column(String)
     college = Column(String)
     tribeId = Column(ARRAY(String), nullable=True)
-    activityId = Column(ARRAY(String), nullable=True)
+    activityId = Column(JSON, nullable=True)
     creditHours = Column(JSON, nullable=True)
     password = Column(String)
     registerTime = Column(String)
@@ -45,3 +45,7 @@ class Activity(Base):
     gradeRestrictions = Column(ARRAY(String),default=[])
     collegeRestrictions = Column(ARRAY(String),default=[])
     tribeRestrictions = Column(ARRAY(String),default=[])
+    status = Column(String)
+    #学时
+    creditClass = Column(String)
+    creditHours = Column(Integer)

@@ -22,5 +22,11 @@ class EventBase(BaseModel):
     imgUrl: str
     college: str
     condition: dict[str, str] = None
+    status: str
+
+
+
+    class Config:
+        orm_mode = True
 
 

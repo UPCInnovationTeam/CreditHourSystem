@@ -13,11 +13,12 @@ class UserBase(BaseModel):
     class_: str
     college: str
     tribeId: list[str] =  None
-    activityId: list[str] = None
+    activityId: dict[str, int] = None   # str是活动id 0 为未开始，1 为签到成功，2 为签退成功
     creditHours: dict[str, int] = None
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 class UserCreate(UserBase):
     """

@@ -23,6 +23,10 @@ class ActivityBase(BaseModel):
     gradeRestrictions : list[str]
     collegeRestrictions : list[str]
     tribeRestrictions : list[str]
+    status: str # 未开始、签到、签退、已结束
+
+    creditClass: str
+    creditHours: int
 
     class Config:
         orm_mode = True

@@ -1,4 +1,6 @@
-from sqlalchemy import select
+from typing import Any, Coroutine, Sequence
+
+from sqlalchemy import select, Row, RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.dbModels import User
 from app.schemas.user import UserBase,UserCreate,UserLogin
@@ -29,7 +31,7 @@ async def create_user(db: AsyncSession, user: UserCreate):
     await db.refresh(db_user)
     return UserBase(**user.model_dump())
 
-async def get_user(db: AsyncSession, uid: str) -> UserBase:
+async def get_user(db: AsyncSession, uid: str) -> User:
     """
     根据UID获取用户
     :param db: get_db()依赖注入
@@ -39,6 +41,30 @@ async def get_user(db: AsyncSession, uid: str) -> UserBase:
     result = await db.execute(select(User).where(User.uid == uid))  # type: ignore
     result = result.scalar_one_or_none()
     return result
+
+async def update_user(db: AsyncSession, uid: str, user: UserBase) -> UserBase:
+    """
+    更新用户信息（任意）
+    """
+    # 获取现有的用户ORM对象
+    result = await db.execute(select(User).where(User.uid == uid))  # type: ignore
+    db_user = result.scalar_one_or_none()
+
+    if db_user is None:
+        raise ValueError("用户不存在")
+
+    # 将Pydantic模型转换为字典并更新ORM对象
+    update_data = user.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_user, key, value)
+
+    # 提交更改到数据库
+    await db.commit()
+    await db.refresh(db_user)
+
+    # 返回更新后的用户信息（Pydantic模型）
+    return UserBase.model_validate(db_user)
+
 
 async def login(db: AsyncSession, user: UserLogin) -> UserBase:
     return await get_user(db, user.uid)
@@ -86,3 +112,51 @@ async def get_last_activity(db: AsyncSession) -> ActivityBase:
     )
     result = result.scalar_one_or_none()
     return result
+
+async def get_20_activities_ids(db: AsyncSession, position: int = 0):
+    """
+    获取Activity表的20行数据（按uid排序）
+    """
+    result = await db.execute(
+        select(Activity.uid).order_by(Activity.uid.desc()).limit(20).offset(position)
+    )
+    return result.scalars().all()
+
+async def join_activity_(db: AsyncSession, user: UserBase, activity_id: str):
+    if activity_id in user.activityId.keys():
+        return {"message": "已加入"}
+    user.activityId[activity_id] = 0    # 0 为未开始，1 为签到成功，2 为签退成功
+    await update_user(db, user.uid, user)
+    return {"message": "加入成功"}
+
+async def check_in_activity(db: AsyncSession, uid: str, activity_id: str):
+    user = await get_user(db, uid)
+    user: UserBase = UserBase.model_validate(user)
+    if activity_id not in user.activityId.keys():
+        logger.info(f"{uid}未加入{activity_id}活动,用户的活动列表:{user.activityId.keys()}")
+        return {"message": "未加入"}
+    if user.activityId[activity_id] == 1:
+        logger.info(f"{uid}已签到{activity_id}活动")
+        return {"message": "已签到"}
+    if user.activityId[activity_id] == 0:
+        user.activityId[activity_id] = 1
+        await update_user(db, user.uid, user)
+        logger.info(f"{uid}签到{activity_id}活动")
+        return {"message": "签到成功"}
+    else:
+        return {"message": "签到失败"}
+
+async def check_out_activity(db: AsyncSession, uid: str, activity_id: str):
+    user = await get_user(db, uid)
+    user: UserBase = UserBase.model_validate(user)
+    if activity_id not in user.activityId.keys():
+        return {"message": "未加入"}
+    if user.activityId[activity_id] == 2:
+        return {"message": "已签退"}
+    if user.activityId[activity_id] == 1:
+        user.activityId[activity_id] = 2
+        await update_user(db, user.uid, user)
+        # TODO: 赋予学时
+        return {"message": "签退成功"}
+    else:
+        return {"message": "签退失败"}
