@@ -55,6 +55,6 @@ class Tribe(Base):
     uid = Column(String, primary_key=True, index=True)
     name = Column(String, index=True)
     college = Column(String, index=True)
-    manager = Column(String, index=True)
+    manager = Column(ARRAY(String), default=[])
     members = Column(ARRAY(String), default=[])
-    activityContent = Column(JSON, nullable=True)
+    activityID = Column(ARRAY(String), default=[])
