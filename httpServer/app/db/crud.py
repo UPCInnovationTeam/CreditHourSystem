@@ -1,6 +1,6 @@
 from typing import Any, Coroutine, Sequence
 
-from sqlalchemy import select, Row, RowMapping
+from sqlalchemy import select, Row, RowMapping, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.dbModels import User
 from app.schemas.user import UserBase,UserCreate,UserLogin
@@ -92,7 +92,7 @@ async def create_activity(db: AsyncSession, activity: ActivityCreate):
     await db.refresh(db_activity)
     return {"id": db_activity.uid, "message": "创建成功"}
 
-async def get_activity(db: AsyncSession, activity_id: str) -> ActivityBase:
+async def get_activity(db: AsyncSession, activity_id: str) -> Activity:
     """
     根据活动id获取活动具体信息
     :param db:
@@ -154,9 +154,41 @@ async def check_out_activity(db: AsyncSession, uid: str, activity_id: str):
     if user.activityId[activity_id] == 2:
         return {"message": "已签退"}
     if user.activityId[activity_id] == 1:
+        activity = await get_activity(db, activity_id)
+        activity: ActivityBase = ActivityBase.model_validate(activity)
+        # user.creditHours[activity.creditClass] += activity.creditHours
+        if activity.creditClass == "思想成长":
+            user.creditHours["mentalGrowth"] += activity.creditHours
+        elif activity.creditClass == "创新创业":
+            user.creditHours["innovation"] += activity.creditHours
+        elif activity.creditClass == "文体发展":
+            user.creditHours["culturalSports"] += activity.creditHours
+        elif activity.creditClass == "社会实践与志愿服务":
+            user.creditHours["socialPractice"] += activity.creditHours
+        elif activity.creditClass == "工作履历与技能培训":
+            user.creditHours["skill"] += activity.creditHours
+        else:
+            return {"message": "签退失败"}
         user.activityId[activity_id] = 2
         await update_user(db, user.uid, user)
-        # TODO: 赋予学时
         return {"message": "签退成功"}
     else:
         return {"message": "签退失败"}
+
+async def search_activity(db: AsyncSession, keyword: str):
+    """
+    根据关键词模糊搜索activity
+    :param db: 通过Depends获取的数据库
+    :param keyword: 可以是uid或title或content
+    :return: id列表
+    """
+    result = await db.execute(
+        select(Activity.uid).filter(
+            or_(
+                Activity.uid.contains(keyword),
+                Activity.title.contains(keyword),
+                Activity.content.contains(keyword)
+            )
+        )
+    )
+    return list(result.scalars().all())

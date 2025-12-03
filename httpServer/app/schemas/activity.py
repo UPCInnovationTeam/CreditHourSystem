@@ -25,7 +25,7 @@ class ActivityBase(BaseModel):
     tribeRestrictions : list[str]
     status: str # 未开始、签到、签退、已结束
 
-    creditClass: str
+    creditClass: str    # 思想成长、创新创业、文体发展、社会实践与志愿服务、工作履历与技能培训
     creditHours: int
 
     class Config:

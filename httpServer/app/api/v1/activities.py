@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.params import Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import get_current_user
 from app.schemas.activity import ActivityBase, ActivityCreate
 from app.db.database import get_db
 from app.schemas.user import UserBase
 from app.db.crud import (get_activity as get_activity_by_id, \
-                         create_activity as create_activity_, get_20_activities_ids, \
-    join_activity_)
+                         create_activity as create_activity_, get_20_activities_ids, join_activity_)
+from app.db.crud import search_activity as search_activity_
 from datetime import datetime
 
 router = APIRouter(prefix="/activity", tags=["石光活动"])
@@ -45,3 +46,11 @@ async def join_activity(activity_id: str,
                         current_user: UserBase = Depends(get_current_user),
                         db: AsyncSession = Depends(get_db)):
     return await join_activity_(db, current_user, activity_id)
+
+@router.get("/search",response_model=list[str])
+async def search_activity(
+        keyword:str = Query(...,description="搜索关键词"),
+        db: AsyncSession = Depends(get_db),
+        current_user: UserBase = Depends(get_current_user)
+):
+    return await search_activity_(db, keyword)
