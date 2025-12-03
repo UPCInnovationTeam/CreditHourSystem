@@ -126,6 +126,7 @@ async def get_20_activities_ids(db: AsyncSession, position: int = 0):
 async def join_activity_(db: AsyncSession, user: UserBase, activity_id: str):
     if activity_id in user.activityId.keys():
         return {"message": "已加入"}
+    # TODO: 检查限制性
     user.activityId[activity_id] = 0    # 0 为未开始，1 为签到成功，2 为签退成功
     await update_user(db, user.uid, user)
     return {"message": "加入成功"}
@@ -220,9 +221,9 @@ async def get_tribe(db: AsyncSession, tribe_id: str) -> TribeBase:
 
 async def get_tribe_by_user(db: AsyncSession, username: str):
     """
-    根据用户名成员或管理员查询对应部落
+    根据用户名成员查询对应部落
     """
     result = await db.execute(select(Tribe).where(
-        or_(Tribe.member.contains(username),Tribe.manager == username)))
+        or_(Tribe.member.contains(username))))
     result = result.scalar_one_or_none()
     return result

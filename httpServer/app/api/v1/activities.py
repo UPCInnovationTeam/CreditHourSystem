@@ -29,6 +29,9 @@ async def create_activity(
         current_user: UserBase = Depends(get_current_user)):
     if current_user.identity != "管理员":
         raise HTTPException(status_code=400, detail="权限不足")
+    activity.publisher = current_user.uid
+    activity.status = "未开始"
+    activity.college = current_user.college
     return await create_activity_(db, activity)
 
 @router.get("/me", response_model=list[str])
