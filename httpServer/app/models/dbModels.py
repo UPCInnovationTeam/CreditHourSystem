@@ -49,3 +49,12 @@ class Activity(Base):
     #学时
     creditClass = Column(String)
     creditHours = Column(Integer)
+
+class Tribe(Base):
+    __tablename__ = "tribe"
+    uid = Column(String, primary_key=True, index=True)
+    name = Column(String, index=True)
+    college = Column(String, index=True)
+    manager = Column(ARRAY(String), default=[])
+    members = Column(ARRAY(String), default=[])
+    activityID = Column(ARRAY(String), default=[])

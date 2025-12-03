@@ -7,8 +7,9 @@ from app.schemas.user import UserBase,UserCreate,UserLogin
 from datetime import datetime
 from app.dependencies.tools import hash_password
 import logging
-from app.models.dbModels import Activity
+from app.models.dbModels import Activity,Tribe
 from app.schemas.activity import ActivityCreate, ActivityUpdate, ActivityBase
+from app.schemas.tribe import TribeCreate,TribeBase
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -192,3 +193,36 @@ async def search_activity(db: AsyncSession, keyword: str):
         )
     )
     return list(result.scalars().all())
+
+async def create_tribe(db: AsyncSession, tribe: TribeCreate):
+    """
+    创建部落，并写入数据库
+    :param db:
+    :param tribe: 部落信息
+    :return:
+    """
+    result = await db.execute(select(Tribe).order_by(Tribe.uid.desc()).limit(1))
+    last_tribe = result.scalar_one_or_none()
+    tribe.uid = str(int(last_tribe.uid) + 1) if last_tribe else "1"
+    db_tribe = Tribe(**tribe.model_dump())
+    db.add(db_tribe)
+    await db.commit()
+    await db.refresh(db_tribe)
+    return {"id": db_tribe.uid, "message": "部落注册成功"}
+
+async def get_tribe(db: AsyncSession, tribe_id: str) -> TribeBase:
+    """
+    根据部落id获取部落具体信息
+    """
+    result = await db.execute(select(Tribe).where(Tribe.uid == tribe_id))  # type: ignore
+    result = result.scalar_one_or_none()
+    return result
+
+async def get_tribe_by_user(db: AsyncSession, username: str):
+    """
+    根据用户名成员或管理员查询对应部落
+    """
+    result = await db.execute(select(Tribe).where(
+        or_(Tribe.member.contains(username),Tribe.manager == username)))
+    result = result.scalar_one_or_none()
+    return result
