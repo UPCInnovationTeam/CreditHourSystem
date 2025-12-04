@@ -7,6 +7,7 @@ from app.api.v1.users import router as users_router
 from app.api.v1.credits import router as credits_router
 from app.api.v1.qrCode import router as qrCode_router
 from app.api.v1.activities import router as activities_router
+from app.api.v1.image import router as image_router
 
 # 创建一个顶层的 APIRouter 实例
 api_v1_router = APIRouter()
@@ -17,3 +18,4 @@ api_v1_router.include_router(users_router)
 api_v1_router.include_router(credits_router)
 api_v1_router.include_router(qrCode_router)
 api_v1_router.include_router(activities_router)
+api_v1_router.include_router(image_router)
