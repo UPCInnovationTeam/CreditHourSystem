@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from fastapi.params import Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import get_current_user
@@ -8,6 +8,7 @@ from app.schemas.user import UserBase
 from app.db.crud import (get_activity as get_activity_by_id, \
                          create_activity as create_activity_, get_20_activities_ids, join_activity_)
 from app.db.crud import search_activity_tribe as search_activity_
+from app.db.crud import set_activity_status
 from datetime import datetime
 
 router = APIRouter(prefix="/activity", tags=["石光活动"])
@@ -57,3 +58,12 @@ async def search_activity(
         current_user: UserBase = Depends(get_current_user)
 ):
     return await search_activity_(db, keyword)
+
+@router.patch("/{activity_id}",response_model=dict[str,str])
+async def update_activity(activity_id:str,
+                          status:str,
+                          current_user: UserBase = Depends(get_current_user),
+                          db : AsyncSession = Depends(get_db)):
+    if current_user.identity != "管理员":
+        raise HTTPException(status_code=400, detail="权限不足")
+    return await set_activity_status(db, activity_id, status)

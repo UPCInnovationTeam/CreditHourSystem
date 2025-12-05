@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="学时管理系统",
     description="学时管理系统",
-    version="0.1.0",
+    version="1.0.0",
     openapi_tags=tags_metadata,
     lifespan=lifespan,
 )

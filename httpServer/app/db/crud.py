@@ -126,7 +126,14 @@ async def get_20_activities_ids(db: AsyncSession, position: int = 0):
 async def join_activity_(db: AsyncSession, user: UserBase, activity_id: str):
     if activity_id in user.activityId.keys():
         return {"message": "已加入"}
-    # TODO: 检查限制性
+    # 检查限制条件
+    activity_info = ActivityBase.model_validate(await get_activity(db, activity_id))    # 先获取活动信息
+    if activity_info.gradeRestrictions and user.grade not in activity_info.gradeRestrictions:
+        return {"message": "年级不符合要求"}
+    if activity_info.collegeRestrictions and user.college not in activity_info.collegeRestrictions:
+        return {"message": "学院不符合要求"}
+    if activity_info.tribeRestrictions and user.tribeId not in activity_info.tribeRestrictions:
+        return {"message": "部落不符合要求"}
     user.activityId[activity_id] = 0    # 0 为未开始，1 为签到成功，2 为签退成功
     await update_user(db, user.uid, user)
     return {"message": "加入成功"}
@@ -176,6 +183,31 @@ async def check_out_activity(db: AsyncSession, uid: str, activity_id: str):
         return {"message": "签退成功"}
     else:
         return {"message": "签退失败"}
+
+async def update_activity(db: AsyncSession, activity_id: str,
+                          activity: ActivityBase):
+    # 获取现有活动
+    activity_ori = await get_activity(db, activity_id)
+    if activity_ori is None:
+        return {"message": "活动不存在"}
+    update_data = activity.model_dump()
+    for key, value in update_data.items():
+        setattr(activity_ori, key, value)
+    # 提交更改到数据库
+    await db.commit()
+    await db.refresh(activity_ori)
+
+    return {"message": "更新成功"}
+
+
+
+async def set_activity_status(db: AsyncSession,
+                              activity_id: str,
+                              status: str):
+    activity = await get_activity(db, activity_id)
+    activity: ActivityBase = ActivityBase.model_validate(activity)
+    activity.status = status
+    return await update_activity(db, activity_id, activity)
 
 
 async def search_activity_tribe(db: AsyncSession, keyword: str):

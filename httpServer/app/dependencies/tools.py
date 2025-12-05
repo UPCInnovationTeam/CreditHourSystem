@@ -60,7 +60,7 @@ async def send_verify_code(email_target: str) -> str | None:
     verify_code = ''.join([str(random.randint(0,9)) for _ in range(6)])
     #设置SMTP服务器信息（163邮箱服务器）
     smtp_server = 'smtp.163.com'
-    port = 25
+    port = 465
     receiver_email = email_target
 
     #邮件内容
@@ -71,8 +71,8 @@ async def send_verify_code(email_target: str) -> str | None:
 
     #发送邮件
     try:
-        server = smtplib.SMTP(smtp_server, port)
-        server.starttls()
+        server = smtplib.SMTP_SSL(smtp_server, port)
+        # server.starttls()
         server.login(sender_email, password)
         server.sendmail(sender_email, receiver_email, message.as_string())
         server.quit()
