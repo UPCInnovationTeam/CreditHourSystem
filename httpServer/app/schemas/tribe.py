@@ -8,7 +8,7 @@ class TribeBase(BaseModel):
     name : str
     college : str
     manager : list[str]
-    member : list[str]
+    members : list[str]
     activityID : list[str]
 
     class Config:

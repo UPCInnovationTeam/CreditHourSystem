@@ -1,14 +1,20 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 import os
 from datetime import datetime
 import uuid
+import platform
+
 
 router = APIRouter(prefix="/image", tags=["石光活动图片"])
 
-# 设置上传文件夹
-UPLOAD_FOLDER = "uploaded_images"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+if platform.system() == "Windows":
+    # 设置上传文件夹
+    UPLOAD_FOLDER = "uploaded_images"
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+elif platform.system() == "Linux":
+    UPLOAD_FOLDER = "/www/images/"
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @router.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
@@ -76,9 +82,11 @@ async def get_image_info(filename: str):
         "modified_time": datetime.fromtimestamp(file_stats.st_mtime).isoformat()
     }
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
+@router.get("/images/{filename}")
+async def get_image(filename: str):
+    file_path = os.path.join(UPLOAD_FOLDER, filename)
+    if not os.path.exists(file_path):
+        return {"error": "File not found"}
+    return FileResponse(file_path)
 
 

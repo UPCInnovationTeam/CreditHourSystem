@@ -7,7 +7,7 @@ from app.db.database import get_db
 from app.schemas.user import UserBase
 from app.db.crud import (get_activity as get_activity_by_id, \
                          create_activity as create_activity_, get_20_activities_ids, join_activity_)
-from app.db.crud import search_activity as search_activity_
+from app.db.crud import search_activity_tribe as search_activity_
 from datetime import datetime
 
 router = APIRouter(prefix="/activity", tags=["石光活动"])
@@ -50,7 +50,7 @@ async def join_activity(activity_id: str,
                         db: AsyncSession = Depends(get_db)):
     return await join_activity_(db, current_user, activity_id)
 
-@router.get("/search",response_model=list[str])
+@router.get("/search",response_model=dict[str,list[str]])
 async def search_activity(
         keyword:str = Query(...,description="搜索关键词"),
         db: AsyncSession = Depends(get_db),

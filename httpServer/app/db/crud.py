@@ -177,14 +177,16 @@ async def check_out_activity(db: AsyncSession, uid: str, activity_id: str):
     else:
         return {"message": "签退失败"}
 
-async def search_activity(db: AsyncSession, keyword: str):
+
+async def search_activity_tribe(db: AsyncSession, keyword: str):
     """
-    根据关键词模糊搜索activity
+    根据关键词模糊搜索活动、部落
     :param db: 通过Depends获取的数据库
     :param keyword: 可以是uid或title或content
-    :return: id列表
+    :return: dict {"activity":list[str],"tribe":list[str]}
     """
-    result = await db.execute(
+    # 搜索活动
+    activity_result = await db.execute(
         select(Activity.uid).filter(
             or_(
                 Activity.uid.contains(keyword),
@@ -193,7 +195,21 @@ async def search_activity(db: AsyncSession, keyword: str):
             )
         )
     )
-    return list(result.scalars().all())
+    activities = list(activity_result.scalars().all())
+
+    # 搜索部落
+    tribe_result = await db.execute(
+        select(Tribe.uid).filter(
+            or_(
+                Tribe.uid.contains(keyword),
+                Tribe.name.contains(keyword),
+                Tribe.college.contains(keyword)
+            )
+        )
+    )
+    tribes = list(tribe_result.scalars().all())
+
+    return {"activity": activities, "tribe": tribes}
 
 async def create_tribe(db: AsyncSession, tribe: TribeCreate):
     """
@@ -211,7 +227,7 @@ async def create_tribe(db: AsyncSession, tribe: TribeCreate):
     await db.refresh(db_tribe)
     return {"id": db_tribe.uid, "message": "部落注册成功"}
 
-async def get_tribe(db: AsyncSession, tribe_id: str) -> TribeBase:
+async def get_tribe(db: AsyncSession, tribe_id: str) -> Tribe:
     """
     根据部落id获取部落具体信息
     """
