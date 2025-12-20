@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="c4be263b-c9f8-4c93-88ed-c2e81fe024c7" name="更改" comment="">
+      <change beforePath="$PROJECT_DIR$/httpServer/app/api/v1/activities.py" beforeDir="false" afterPath="$PROJECT_DIR$/httpServer/app/api/v1/activities.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/httpServer/app/api/v1/users.py" beforeDir="false" afterPath="$PROJECT_DIR$/httpServer/app/api/v1/users.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/httpServer/app/db/crud.py" beforeDir="false" afterPath="$PROJECT_DIR$/httpServer/app/db/crud.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="376u1ql2ysPE8zAKvfI7P0xqTHF" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;study-time&quot;
+  }
+}</component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-164cda30dcd9-0af03a5fa574-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.26830.99" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="c4be263b-c9f8-4c93-88ed-c2e81fe024c7" name="更改" comment="" />
+      <created>1766235630069</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1766235630069</updated>
+    </task>
+    <servers />
+  </component>
+</project>
