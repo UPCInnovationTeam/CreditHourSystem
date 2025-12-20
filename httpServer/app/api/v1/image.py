@@ -84,6 +84,9 @@ async def get_image_info(filename: str):
 
 @router.get("/images/{filename}")
 async def get_image(filename: str):
+    """
+    获取图片文件
+    """
     file_path = os.path.join(UPLOAD_FOLDER, filename)
     if not os.path.exists(file_path):
         return {"error": "File not found"}
