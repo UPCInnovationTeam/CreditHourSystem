@@ -19,7 +19,11 @@ class User(Base):
     creditHours = Column(JSON, nullable=True)
     password = Column(String)
     registerTime = Column(String)
-
+    """
+    用户uid，姓名，身份，年级，专业，班级，学院，
+    所属部落ID列表，参与活动ID列表
+    获得学分小时数，密码，注册时间
+    """
 
 class Activity(Base):
     __tablename__ = "activities"
@@ -35,7 +39,7 @@ class Activity(Base):
     maxParticipants = Column(Integer,nullable=False)
     currentParticipants = Column(Integer,nullable=False)
     participantsIDs = Column(ARRAY(Integer),nullable=False)
-    #活动
+    #活动基本信息
     title = Column(String,nullable=False)
     content = Column(String,nullable=False)
     publisher = Column(String,nullable=False)
@@ -58,3 +62,7 @@ class Tribe(Base):
     manager = Column(ARRAY(String), default=[])
     members = Column(ARRAY(String), default=[])
     activityID = Column(ARRAY(String), default=[])
+    """
+    部落名称，所属学院
+    部落管理者列表，部落成员列表，部落关联活动ID列表
+    """

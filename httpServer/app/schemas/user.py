@@ -18,11 +18,11 @@ class UserBase(BaseModel):
 
     class Config:
         orm_mode = True
-        from_attributes = True
+        from_attributes = True#允许从对象属性中读取数据
 
 class UserCreate(UserBase):
     """
-    密码/注册时间
+    邮箱/密码/注册时间/验证码
     """
     email: str
     password: str | bytes
@@ -34,6 +34,7 @@ class UserCreate(UserBase):
 
 class UserLogin(BaseModel):
     """
+    用于登录时数据验证
     学工号/密码
     """
     uid: str

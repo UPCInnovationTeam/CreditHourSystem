@@ -9,15 +9,27 @@ import threading
 from passlib.context import CryptContext
 import hashlib
 
+#定义一个字典，用于储存邮箱和验证码以及时间戳
 records: dict[str, Tuple[str, float]] = {}
 
+#创建密码上下文，密码哈希
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 # 注册时 - 密码哈希与存储
 def hash_password(password_: str) -> str:
+    """
+    对密码进行哈希处理
+    :param password_:明文密码
+    :return:哈希后的密码
+    """
     return pwd_context.hash(password_)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    验证明文密码与哈希密码是否匹配
+    :param plain_password:明文密码
+    :param hashed_password:哈希后密码
+    """
     return pwd_context.verify(plain_password, hashed_password)
 
 def clean_expired_records(expiration_time: int = 300):
@@ -25,12 +37,13 @@ def clean_expired_records(expiration_time: int = 300):
     清理过期的验证码记录
     :param expiration_time: 过期时间（秒），默认300秒（5分钟）
     """
-    current_time = time.time()
+    current_time = time.time()#获取当前时间戳
+    #找出所有过期邮箱
     expired_emails = [
         email for email, (_, timestamp) in records.items()
         if current_time - timestamp > expiration_time
     ]
-
+    #删除过期记录
     for email in expired_emails:
         del records[email]
 
@@ -72,8 +85,8 @@ async def send_verify_code(email_target: str) -> str | None:
     #发送邮件
     try:
         server = smtplib.SMTP(smtp_server, port)
-        server.starttls()
-        server.login(sender_email, password)
+        server.starttls()#启用TLS加密
+        server.login(sender_email, password)#需要替换为实际密码或授权码
         server.sendmail(sender_email, receiver_email, message.as_string())
         server.quit()
         records[email_target] = (verify_code, time.time())
@@ -81,7 +94,7 @@ async def send_verify_code(email_target: str) -> str | None:
     except Exception as e:
         print(f"发送邮件失败：{e}")
         return None
-
+##主程序入口，用于测试发送验证码功能
 if __name__ == '__main__':
     print(send_verify_code("sudaowan@163.com"))
 
