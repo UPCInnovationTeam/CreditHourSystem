@@ -68,9 +68,15 @@ async def update_user(db: AsyncSession, uid: str, user: UserBase) -> UserBase:
 
 
 async def login(db: AsyncSession, user: UserLogin) -> UserBase:
+    """
+    用户登录
+    """
     return await get_user(db, user.uid)
 
 async def set_credit(db: AsyncSession, uid: str, credit: dict) :
+    """
+    设置用户信用值
+    """
     user = await get_user(db, uid)
     user.creditHours = credit
     user_ = User(**user.model_dump())
@@ -124,6 +130,9 @@ async def get_20_activities_ids(db: AsyncSession, position: int = 0):
     return result.scalars().all()
 
 async def join_activity_(db: AsyncSession, user: UserBase, activity_id: str):
+    """
+    用户加入活动
+    """
     if activity_id in user.activityId.keys():
         return {"message": "已加入"}
     # 检查限制条件
@@ -139,33 +148,65 @@ async def join_activity_(db: AsyncSession, user: UserBase, activity_id: str):
     return {"message": "加入成功"}
 
 async def check_in_activity(db: AsyncSession, uid: str, activity_id: str):
+    """
+        处理用户活动签到功能
+
+        :param db: 数据库会话对象
+        :param uid: 用户唯一标识符
+        :param activity_id: 活动唯一标识符
+        :return: 包含签到结果信息的字典
+        """
+
+    # 获取用户信息并转换为UserBase模型
     user = await get_user(db, uid)
     user: UserBase = UserBase.model_validate(user)
+    # 检查用户是否已加入该活动
     if activity_id not in user.activityId.keys():
         logger.info(f"{uid}未加入{activity_id}活动,用户的活动列表:{user.activityId.keys()}")
         return {"message": "未加入"}
+    # 检查用户是否已经签到
     if user.activityId[activity_id] == 1:
         logger.info(f"{uid}已签到{activity_id}活动")
         return {"message": "已签到"}
+    # 如果用户已加入但未签到，则执行签到操作
     if user.activityId[activity_id] == 0:
         user.activityId[activity_id] = 1
         await update_user(db, user.uid, user)
         logger.info(f"{uid}签到{activity_id}活动")
         return {"message": "签到成功"}
+    # 其他情况返回签到失败
     else:
         return {"message": "签到失败"}
 
 async def check_out_activity(db: AsyncSession, uid: str, activity_id: str):
+    """
+        处理用户活动签退功能，并根据活动类型增加相应的学分
+
+        :param db: 数据库会话对象
+        :param uid: 用户唯一标识符
+        :param activity_id: 活动唯一标识符
+        :return: 包含签退结果信息的字典
+        """
+
+    # 获取用户信息并转换为UserBase模型
     user = await get_user(db, uid)
     user: UserBase = UserBase.model_validate(user)
+
+    # 检查用户是否已加入该活动
     if activity_id not in user.activityId.keys():
         return {"message": "未加入"}
+
+    # 检查用户是否已经签退
     if user.activityId[activity_id] == 2:
         return {"message": "已签退"}
+
+    # 如果用户已签到但未签退，则执行签退操作
     if user.activityId[activity_id] == 1:
         activity = await get_activity(db, activity_id)
         activity: ActivityBase = ActivityBase.model_validate(activity)
         # user.creditHours[activity.creditClass] += activity.creditHours
+        # 根据活动类别给用户增加相应类型的学分
+
         if activity.creditClass == "思想成长":
             user.creditHours["mentalGrowth"] += activity.creditHours
         elif activity.creditClass == "创新创业":

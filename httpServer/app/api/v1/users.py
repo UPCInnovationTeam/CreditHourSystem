@@ -54,6 +54,9 @@ async def update_identity(identity: str = Body(...),
                           password: str = Body(...),
                           current_user: UserBase = Depends(get_current_user),
                           db = Depends(get_db)):
+    """
+    更新当前用户身份
+    """
     if password != identity_pwd:
         raise HTTPException(status_code=400, detail=f"密码错误")
     current_user.identity = identity

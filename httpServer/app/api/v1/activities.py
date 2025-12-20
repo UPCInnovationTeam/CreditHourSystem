@@ -28,6 +28,9 @@ async def get_activity(id_:str, db: AsyncSession = Depends(get_db), current_user
 async def create_activity(
         activity: ActivityCreate, db: AsyncSession = Depends(get_db),
         current_user: UserBase = Depends(get_current_user)):
+    """
+    活动的创建
+    """
     if current_user.identity != "管理员":
         raise HTTPException(status_code=400, detail="权限不足")
     activity.publisher = current_user.uid
@@ -37,18 +40,27 @@ async def create_activity(
 
 @router.get("/me", response_model=list[str])
 async def get_my_activity(current_user: UserBase = Depends(get_current_user)):
+    """
+    返回当前登录用户参与的所有活动ID列表
+    """
     return current_user.activityId.keys()
 
 @router.get("/fetch_20", response_model=list[str])
 async def fetch_20_activity(position:int,
                             db: AsyncSession = Depends(get_db),
                             current_user: UserBase = Depends(get_current_user)):
+    """
+    返回20个活动ID列表
+    """
     return await get_20_activities_ids(db, position)
 
 @router.post("/join/{activity_id}")
 async def join_activity(activity_id: str,
                         current_user: UserBase = Depends(get_current_user),
                         db: AsyncSession = Depends(get_db)):
+    """
+    加入活动
+    """
     return await join_activity_(db, current_user, activity_id)
 
 @router.get("/search",response_model=dict[str,list[str]])
@@ -57,6 +69,9 @@ async def search_activity(
         db: AsyncSession = Depends(get_db),
         current_user: UserBase = Depends(get_current_user)
 ):
+    """
+    搜索活动、部落
+    """
     return await search_activity_(db, keyword)
 
 @router.patch("/{activity_id}",response_model=dict[str,str])
@@ -64,6 +79,9 @@ async def update_activity(activity_id:str,
                           status:str,
                           current_user: UserBase = Depends(get_current_user),
                           db : AsyncSession = Depends(get_db)):
+    """
+    更新活动状态
+    """
     if current_user.identity != "管理员":
         raise HTTPException(status_code=400, detail="权限不足")
     return await set_activity_status(db, activity_id, status)
