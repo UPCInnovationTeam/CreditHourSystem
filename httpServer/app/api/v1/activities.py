@@ -29,20 +29,36 @@ async def create_activity(
         activity: ActivityCreate, db: AsyncSession = Depends(get_db),
         current_user: UserBase = Depends(get_current_user)):
     """
-    活动的创建
-    """
+        创建新的活动
+
+        :param activity: ActivityCreate模型，包含活动的基本信息
+        :param db: 数据库会话，通过依赖注入获取
+        :param current_user: 当前登录用户信息，通过依赖注入获取
+        :return: 创建成功的活动ID和消息
+        """
+    # 检查用户权限，只有管理员才能创建活动
     if current_user.identity != "管理员":
-        raise HTTPException(status_code=400, detail="权限不足")
+         raise HTTPException(status_code=400, detail="权限不足")
+    # 自动设置活动发布者为当前用户ID
     activity.publisher = current_user.uid
+    # 设置活动初始状态为"未开始"
     activity.status = "未开始"
+    # 设置活动所属学院为当前用户所在学院
     activity.college = current_user.college
+
+    # 调用数据库CRUD操作创建活动
     return await create_activity_(db, activity)
 
 @router.get("/me", response_model=list[str])
 async def get_my_activity(current_user: UserBase = Depends(get_current_user)):
     """
     返回当前登录用户参与的所有活动ID列表
+
+    :param current_user: 通过依赖注入获取的当前登录用户信息
+    :return: 用户参与的活动ID列表
     """
+    # 从用户对象的activityId字段中提取所有活动ID的键值并返回
+
     return current_user.activityId.keys()
 
 @router.get("/fetch_20", response_model=list[str])
@@ -59,7 +75,12 @@ async def join_activity(activity_id: str,
                         current_user: UserBase = Depends(get_current_user),
                         db: AsyncSession = Depends(get_db)):
     """
-    加入活动
+    用户加入指定ID的活动
+
+    :param activity_id: 要加入的活动ID
+    :param current_user: 通过依赖注入获取的当前登录用户信息
+    :param db: 通过依赖注入获取的数据库会话
+    :return: 加入活动的结果信息
     """
     return await join_activity_(db, current_user, activity_id)
 
@@ -80,7 +101,12 @@ async def update_activity(activity_id:str,
                           current_user: UserBase = Depends(get_current_user),
                           db : AsyncSession = Depends(get_db)):
     """
-    更新活动状态
+    根据关键词搜索活动和部落信息
+
+    :param keyword: 搜索关键词，通过Query参数传入
+    :param db: 数据库会话，通过依赖注入获取
+    :param current_user: 当前登录用户信息，通过依赖注入获取
+    :return: 包含活动和部落搜索结果的字典，格式为{"activity": [活动ID列表], "tribe": [部落ID列表]}
     """
     if current_user.identity != "管理员":
         raise HTTPException(status_code=400, detail="权限不足")
