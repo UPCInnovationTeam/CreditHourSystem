@@ -15,11 +15,18 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 async def create_user(db: AsyncSession, user: UserCreate):
+    """
+    创建新用户并写入数据库
+    :param db:数据库会话对象
+    user:用户创建信息
+    :return:创建成功的用户信息
+    """
     # logger.info(f"密码：{user.password}")
     user.password = hash_password(user.password)
     # logger.info(f"哈希后的密码：{user.password}")
     user.identity = "使用者"
     user.registerTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    #初始化
     user.tribeId = []
     user.activityId = {}
     user.creditHours = {"mentalGrowth": 0, "innovation": 0, "culturalSports": 0, "socialPractice": 0, "skill": 0}
@@ -46,6 +53,12 @@ async def get_user(db: AsyncSession, uid: str) -> User:
 async def update_user(db: AsyncSession, uid: str, user: UserBase) -> UserBase:
     """
     更新用户信息（任意）
+    :param db: 数据库会话对象
+    :uid:用户id
+    :user:更新后用户信息
+    :return:更新后用户信息
+    异常:
+    ValueError:如果用户不存在
     """
     # 获取现有的用户ORM对象
     result = await db.execute(select(User).where(User.uid == uid))  # type: ignore
@@ -69,13 +82,20 @@ async def update_user(db: AsyncSession, uid: str, user: UserBase) -> UserBase:
 
 async def login(db: AsyncSession, user: UserLogin) -> UserBase:
     """
-    用户登录
+    用户登录验证
+    :db:
+    :user:登录信息
+    :return:登录成功的用户信息
     """
     return await get_user(db, user.uid)
 
 async def set_credit(db: AsyncSession, uid: str, credit: dict) :
     """
-    设置用户信用值
+    设置用户学分
+    :param db:
+    :param uid:
+    :param credit:包含学时类别及其数值的新积分数据
+    :return:一个包含消息与跟新后学分详情的字典
     """
     user = await get_user(db, uid)
     user.creditHours = credit
@@ -123,6 +143,7 @@ async def get_last_activity(db: AsyncSession) -> ActivityBase:
 async def get_20_activities_ids(db: AsyncSession, position: int = 0):
     """
     获取Activity表的20行数据（按uid排序）
+    return:活动列表（按uid降序排列）
     """
     result = await db.execute(
         select(Activity.uid).order_by(Activity.uid.desc()).limit(20).offset(position)
@@ -131,7 +152,7 @@ async def get_20_activities_ids(db: AsyncSession, position: int = 0):
 
 async def join_activity_(db: AsyncSession, user: UserBase, activity_id: str):
     """
-    用户加入活动
+    加入活动
     """
     if activity_id in user.activityId.keys():
         return {"message": "已加入"}

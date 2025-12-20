@@ -25,7 +25,7 @@ class EventBase(BaseModel):
     status: str
 
 
-
+    #Pydantic 模型配置类，开启ORM模式，允许从ORM对象中读取数据
     class Config:
         orm_mode = True
 
