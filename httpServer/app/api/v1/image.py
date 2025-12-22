@@ -84,7 +84,7 @@ async def get_image_info(filename: str):
 
 @router.get("/images/{filename}")
 async def get_image(filename: str):
-     """
+    """
     根据文件名获取图片文件内容
 
     :param filename: 请求的图片文件名

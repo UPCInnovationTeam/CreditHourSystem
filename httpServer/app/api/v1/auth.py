@@ -12,7 +12,7 @@ router = APIRouter(prefix="/auth", tags=["认证管理"])
 
 @router.post("/login")
 async def login(user_: UserLogin, db: AsyncSession = Depends(get_db)):
-     """
+    """
     处理用户登录请求，验证用户凭据并返回访问令牌
 
     :param user_: UserLogin模型，包含用户登录信息（uid和password）

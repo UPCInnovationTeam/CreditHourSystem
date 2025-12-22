@@ -17,6 +17,7 @@ logger.setLevel(logging.INFO)
 async def create_user(db: AsyncSession, user: UserCreate):
     """
     创建新用户并写入数据库
+    :param user:
     :param db:数据库会话对象
     user:用户创建信息
     :return:创建成功的用户信息
@@ -53,6 +54,8 @@ async def get_user(db: AsyncSession, uid: str) -> User:
 async def update_user(db: AsyncSession, uid: str, user: UserBase) -> UserBase:
     """
     更新用户信息（任意）
+    :param user:
+    :param uid:
     :param db: 数据库会话对象
     :uid:用户id
     :user:更新后用户信息
@@ -69,6 +72,7 @@ async def update_user(db: AsyncSession, uid: str, user: UserBase) -> UserBase:
 
     # 将Pydantic模型转换为字典并更新ORM对象
     update_data = user.model_dump(exclude_unset=True)
+    logger.info(f"更新用户信息：{update_data}")
     for key, value in update_data.items():
         setattr(db_user, key, value)
 
@@ -112,14 +116,14 @@ async def create_activity(db: AsyncSession, activity: ActivityCreate):
     :return:
     """
     last_activity = await get_last_activity(db)
-    activity.uid = str(int(last_activity.uid) + 1) if last_activity else "1"
+    activity.uid = int(last_activity.uid) + 1 if last_activity else 1
     db_activity = Activity(**activity.model_dump())
     db.add(db_activity)
     await db.commit()
     await db.refresh(db_activity)
     return {"id": db_activity.uid, "message": "创建成功"}
 
-async def get_activity(db: AsyncSession, activity_id: str) -> Activity:
+async def get_activity(db: AsyncSession, activity_id: int) -> Activity:
     """
     根据活动id获取活动具体信息
     :param db:
@@ -150,7 +154,7 @@ async def get_20_activities_ids(db: AsyncSession, position: int = 0):
     )
     return result.scalars().all()
 
-async def join_activity_(db: AsyncSession, user: UserBase, activity_id: str):
+async def join_activity_(db: AsyncSession, user: UserBase, activity_id: int):
     """
     加入活动
     """
@@ -168,7 +172,7 @@ async def join_activity_(db: AsyncSession, user: UserBase, activity_id: str):
     await update_user(db, user.uid, user)
     return {"message": "加入成功"}
 
-async def check_in_activity(db: AsyncSession, uid: str, activity_id: str):
+async def check_in_activity(db: AsyncSession, uid: str, activity_id: int):
     """
         处理用户活动签到功能
 
@@ -199,7 +203,7 @@ async def check_in_activity(db: AsyncSession, uid: str, activity_id: str):
     else:
         return {"message": "签到失败"}
 
-async def check_out_activity(db: AsyncSession, uid: str, activity_id: str):
+async def check_out_activity(db: AsyncSession, uid: str, activity_id: int):
     """
         处理用户活动签退功能，并根据活动类型增加相应的学分
 
@@ -246,7 +250,7 @@ async def check_out_activity(db: AsyncSession, uid: str, activity_id: str):
     else:
         return {"message": "签退失败"}
 
-async def update_activity(db: AsyncSession, activity_id: str,
+async def update_activity(db: AsyncSession, activity_id: int,
                           activity: ActivityBase):
     # 获取现有活动
     activity_ori = await get_activity(db, activity_id)
@@ -264,7 +268,7 @@ async def update_activity(db: AsyncSession, activity_id: str,
 
 
 async def set_activity_status(db: AsyncSession,
-                              activity_id: str,
+                              activity_id: int,
                               status: str):
     activity = await get_activity(db, activity_id)
     activity: ActivityBase = ActivityBase.model_validate(activity)
@@ -283,7 +287,7 @@ async def search_activity_tribe(db: AsyncSession, keyword: str):
     activity_result = await db.execute(
         select(Activity.uid).filter(
             or_(
-                Activity.uid.contains(keyword),
+                # Activity.uid.contains(keyword),
                 Activity.title.contains(keyword),
                 Activity.content.contains(keyword)
             )
@@ -295,7 +299,7 @@ async def search_activity_tribe(db: AsyncSession, keyword: str):
     tribe_result = await db.execute(
         select(Tribe.uid).filter(
             or_(
-                Tribe.uid.contains(keyword),
+                # Tribe.uid.contains(keyword),
                 Tribe.name.contains(keyword),
                 Tribe.college.contains(keyword)
             )

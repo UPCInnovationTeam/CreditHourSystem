@@ -22,7 +22,7 @@ async def get_tribe_by_id(tribe_id: str, db: AsyncSession = Depends(get_db), use
 
 @router.post("/create")
 async def create_tribe_(tribe: TribeCreate, db: AsyncSession = Depends(get_db), user: UserBase = Depends(get_current_user)):
-     """
+    """
     创建新的部落并写入数据库
 
     :param tribe: TribeCreate模型，包含部落创建所需的基本信息

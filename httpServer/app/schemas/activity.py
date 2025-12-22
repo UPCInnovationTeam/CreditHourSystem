@@ -5,7 +5,7 @@ class ActivityBase(BaseModel):
     id/注册时间/报名开始，截至时间/活动开始，结束时间/限制报名人数/当前报名人数/报名者id/活动标题/
     内容/发布者/活动图片地址/活动院校/限制条件（年纪/部落/学院）
     """
-    uid : str
+    uid : int
     registerTime : str
     registrationStratTime : str
     registrationEndTime : str

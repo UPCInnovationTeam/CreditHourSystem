@@ -28,7 +28,7 @@ class User(Base):
 class Activity(Base):
     __tablename__ = "activities"
 
-    uid = Column(String, primary_key=True, index=True)
+    uid = Column(Integer, primary_key=True, index=True)
     registerTime = Column(String,nullable=False)
     #报名时间段，活动时间段
     registrationStratTime = Column(String,nullable=False)

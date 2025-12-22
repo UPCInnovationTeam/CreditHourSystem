@@ -14,7 +14,7 @@ from datetime import datetime
 router = APIRouter(prefix="/activity", tags=["石光活动"])
 
 @router.get("/id",response_model=ActivityBase)
-async def get_activity(id_:str, db: AsyncSession = Depends(get_db), current_user: UserBase = Depends(get_current_user)):
+async def get_activity(id_:int, db: AsyncSession = Depends(get_db), current_user: UserBase = Depends(get_current_user)):
     """
     获取特定id活动，发请求时必须带token
     :param id_:
@@ -49,7 +49,7 @@ async def create_activity(
     # 调用数据库CRUD操作创建活动
     return await create_activity_(db, activity)
 
-@router.get("/me", response_model=list[str])
+@router.get("/me", response_model=list[int])
 async def get_my_activity(current_user: UserBase = Depends(get_current_user)):
     """
     返回当前登录用户参与的所有活动ID列表
@@ -58,10 +58,9 @@ async def get_my_activity(current_user: UserBase = Depends(get_current_user)):
     :return: 用户参与的活动ID列表
     """
     # 从用户对象的activityId字段中提取所有活动ID的键值并返回
+    return list(map(int,current_user.activityId.keys()))
 
-    return current_user.activityId.keys()
-
-@router.get("/fetch_20", response_model=list[str])
+@router.get("/fetch_20", response_model=list[int])
 async def fetch_20_activity(position:int,
                             db: AsyncSession = Depends(get_db),
                             current_user: UserBase = Depends(get_current_user)):
@@ -71,7 +70,7 @@ async def fetch_20_activity(position:int,
     return await get_20_activities_ids(db, position)
 
 @router.post("/join/{activity_id}")
-async def join_activity(activity_id: str,
+async def join_activity(activity_id: int,
                         current_user: UserBase = Depends(get_current_user),
                         db: AsyncSession = Depends(get_db)):
     """
@@ -84,7 +83,7 @@ async def join_activity(activity_id: str,
     """
     return await join_activity_(db, current_user, activity_id)
 
-@router.get("/search",response_model=dict[str,list[str]])
+@router.get("/search",response_model=dict[str,list[int]])
 async def search_activity(
         keyword:str = Query(...,description="搜索关键词"),
         db: AsyncSession = Depends(get_db),
@@ -96,7 +95,7 @@ async def search_activity(
     return await search_activity_(db, keyword)
 
 @router.patch("/{activity_id}",response_model=dict[str,str])
-async def update_activity(activity_id:str,
+async def update_activity(activity_id:int,
                           status:str,
                           current_user: UserBase = Depends(get_current_user),
                           db : AsyncSession = Depends(get_db)):

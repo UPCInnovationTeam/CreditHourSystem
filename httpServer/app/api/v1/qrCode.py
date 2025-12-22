@@ -32,7 +32,7 @@ def is_timestamp_valid(timestamp: str, window: int = qr_window_seconds) -> bool:
     except Exception:
         return False
 
-def verify_token(event_id: str, token: str, timestamp: str) -> bool:
+def verify_token(event_id: int, token: str, timestamp: str) -> bool:
     """
     校验二维码中的 token 是否有效
     """
@@ -42,7 +42,7 @@ def verify_token(event_id: str, token: str, timestamp: str) -> bool:
     return expected_token == token
 
 #带安全验证的实现
-def generate_secure_token(event:str)->tuple:
+def generate_secure_token(event:int)->tuple:
     """
     生成安全令牌
     :param event: 石光活动id
@@ -55,7 +55,7 @@ def generate_secure_token(event:str)->tuple:
 
 @router.get("/generate")
 async def generate_secure_qr(
-        event_id: str,
+        event_id: int,
         user: UserBase = Depends(get_current_user),
         action: str = "checkin"
 ):
@@ -96,7 +96,7 @@ async def generate_secure_qr(
 @router.get("/checkin")
 async def checkin_qr(
         uid: str,
-        event_id: str,
+        event_id: int,
         token: str,
         timestamp: str,
         user: UserBase = Depends(get_current_user),
@@ -126,7 +126,7 @@ async def checkin_qr(
 @router.get("/checkout")
 async def checkout_qr(
         uid: str,
-        event_id: str,
+        event_id: int,
         token: str,
         timestamp: str,
         user: UserBase = Depends(get_current_user),
