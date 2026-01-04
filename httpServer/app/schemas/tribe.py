@@ -4,7 +4,7 @@ class TribeBase(BaseModel):
     """
     id/名称/所属学院/管理员/成员/活动ID
     """
-    uid : str
+    uid : int
     name : str
     college : str
     manager : list[str]
@@ -19,3 +19,8 @@ class TribeBase(BaseModel):
 class TribeCreate(TribeBase):
     pass
     #没有额外的字段，直接继承父类的字段
+
+class TribeUpdate(TribeBase):
+
+    class Config:
+        orm_mode = True
