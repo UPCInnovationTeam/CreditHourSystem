@@ -1,4 +1,5 @@
 from typing import Any, Coroutine, Sequence
+from warnings import deprecated
 
 from sqlalchemy import select, Row, RowMapping, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -118,7 +119,7 @@ async def login(db: AsyncSession, user: UserLogin) -> str:
     """
     return await get_user_password(db, user.uid)
 
-@deprecated
+@deprecated("已经弃用")
 async def set_credit(db: AsyncSession, uid: str, credit: dict) :
     """
     set_credit已弃用，请使用update_user代替
