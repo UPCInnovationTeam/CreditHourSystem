@@ -2,8 +2,6 @@ from typing import Any, Coroutine, Sequence
 
 from sqlalchemy import select, Row, RowMapping, or_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.util import deprecated
-
 from app.models.dbModels import User
 from app.schemas.user import UserBase,UserCreate,UserLogin
 from datetime import datetime
@@ -354,7 +352,7 @@ async def create_tribe(db: AsyncSession, tribe: TribeCreate):
     await db.refresh(db_tribe)
     return {"id": db_tribe.uid, "message": "部落注册成功"}
 
-async def get_tribe(db: AsyncSession, tribe_id: str) -> Tribe:
+async def get_tribe(db: AsyncSession, tribe_id: str) -> TribeBase:
     """
     根据部落id获取部落具体信息
     """
