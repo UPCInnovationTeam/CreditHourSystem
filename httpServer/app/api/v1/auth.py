@@ -20,12 +20,15 @@ async def login(user_: UserLogin, db: AsyncSession = Depends(get_db)):
     :return: 包含访问令牌和令牌类型的字典
     """
      # 从数据库中获取用户信息进行验证
-    user = await login_db(db, user_)    # 从数据库中获取用户信息
+    try:
+        user_password = await login_db(db, user_)    # 从数据库中获取用户信息
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     # 验证用户是否存在且密码正确
-    if user is None or not verify_password(user_.password, user.password):
+    if user_password is None or not verify_password(user_.password, user_password):
         raise HTTPException(status_code=400, detail="用户名或密码错误")
 
     # 创建访问令牌
-    access_token = create_access_token(data={"sub": user.uid})
+    access_token = create_access_token(data={"sub": user_.uid})
     # 返回令牌信息
     return {"access_token": access_token, "token_type": "bearer"}

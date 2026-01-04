@@ -2,6 +2,8 @@ from typing import Any, Coroutine, Sequence
 
 from sqlalchemy import select, Row, RowMapping, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.util import deprecated
+
 from app.models.dbModels import User
 from app.schemas.user import UserBase,UserCreate,UserLogin
 from datetime import datetime
@@ -40,16 +42,41 @@ async def create_user(db: AsyncSession, user: UserCreate):
     await db.refresh(db_user)
     return UserBase(**user.model_dump())
 
-async def get_user(db: AsyncSession, uid: str) -> User:
+async def get_user(db: AsyncSession, uid: str) -> UserBase:
     """
     根据UID获取用户
     :param db: get_db()依赖注入
     :param uid: 用户的UID
-    :return: 返回用户信息(Tuple)
+    :return: 返回用户信息(pydantic模型)
     """
+    logger.info(f"获取用户信息，UID：{uid}")
+    # 获取现有的用户ORM对象
     result = await db.execute(select(User).where(User.uid == uid))  # type: ignore
-    result = result.scalar_one_or_none()
-    return result
+    db_user = result.scalar_one_or_none()
+
+    if db_user is None:
+        logger.warning(f"用户不存在，UID：{uid}")
+        raise ValueError("用户不存在")
+
+
+    return UserBase.model_validate(db_user)
+
+async def get_user_password(db: AsyncSession, uid: str) -> str:
+    """
+    根据UID获取用户密码
+    :param db: get_db()依赖注入
+    :param uid: 用户的UID
+    :return: 返回用户信息(pydantic模型)
+    """
+    # 获取现有的用户ORM对象
+    result = await db.execute(select(User).where(User.uid == uid))  # type: ignore
+    db_user = result.scalar_one_or_none()
+
+    if db_user is None:
+        raise ValueError("用户不存在")
+
+    return db_user.password
+
 
 async def update_user(db: AsyncSession, uid: str, user: UserBase) -> UserBase:
     """
@@ -84,17 +111,19 @@ async def update_user(db: AsyncSession, uid: str, user: UserBase) -> UserBase:
     return UserBase.model_validate(db_user)
 
 
-async def login(db: AsyncSession, user: UserLogin) -> UserBase:
+async def login(db: AsyncSession, user: UserLogin) -> str:
     """
     用户登录验证
     :db:
     :user:登录信息
     :return:登录成功的用户信息
     """
-    return await get_user(db, user.uid)
+    return await get_user_password(db, user.uid)
 
+@deprecated
 async def set_credit(db: AsyncSession, uid: str, credit: dict) :
     """
+    set_credit已弃用，请使用update_user代替
     设置用户学分
     :param db:
     :param uid:
