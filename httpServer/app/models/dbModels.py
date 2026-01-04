@@ -56,7 +56,7 @@ class Activity(Base):
 
 class Tribe(Base):
     __tablename__ = "tribe"
-    uid = Column(Integer, primary_key=True, index=True)
+    uid = Column(String, primary_key=True, index=True)
     name = Column(String, index=True)
     college = Column(String, index=True)
     manager = Column(ARRAY(String), default=[])
