@@ -413,7 +413,6 @@ async def set_tribe_status(db: AsyncSession,
     await db.refresh(tribe)
     return tribe
 
-<<<<<<< HEAD
 async def join_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
     """
     加入部落
@@ -485,7 +484,7 @@ async def update_tribe(db: AsyncSession, tribe_id: int,
     await db.commit()
     await db.refresh(tribe_ori)
     return {"message": "更新成功"}
-=======
+
 from app.schemas.user import PageResponse as UserPageResponse
 async def get_page_users(db: AsyncSession, page: int, page_size: int) -> UserPageResponse:
     """
@@ -516,4 +515,4 @@ async def get_page_users(db: AsyncSession, page: int, page_size: int) -> UserPag
         page=page,
         size=page_size,
     )
->>>>>>> d4bf42d9a8e5894283c44db9bd8d9a5d9679f838
+
