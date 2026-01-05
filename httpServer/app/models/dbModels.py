@@ -38,7 +38,7 @@ class Activity(Base):
     #人数限制，当前报名人数，报名人id
     maxParticipants = Column(Integer,nullable=False)
     currentParticipants = Column(Integer,nullable=False)
-    participantsIDs = Column(ARRAY(Integer),nullable=False)
+    participantsIDs = Column(ARRAY(String),nullable=False)
     #活动基本信息
     title = Column(String,nullable=False)
     content = Column(String,nullable=False)

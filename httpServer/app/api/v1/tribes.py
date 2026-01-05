@@ -34,6 +34,7 @@ async def create_tribe_(tribe: TribeCreate, db: AsyncSession = Depends(get_db), 
     # 检查用户权限，只有管理员才能创建部落
     if user.identity != "管理员":
         raise HTTPException(status_code=403, detail="权限不足")
+    tribe.manager = [user.uid]
     return await create_tribe(db, tribe)
 
 @router.patch("/{tribe_id}",response_model=dict[str,str])

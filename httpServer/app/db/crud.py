@@ -55,7 +55,7 @@ async def get_user(db: AsyncSession, uid: str) -> UserBase:
     :param uid: 用户的UID
     :return: 返回用户信息(pydantic模型)
     """
-    logger.info(f"获取用户信息，UID：{uid}")
+    # logger.info(f"获取用户信息，UID：{uid}")
     # 获取现有的用户ORM对象
     result = await db.execute(select(User).where(User.uid == uid))  # type: ignore
     db_user = result.scalar_one_or_none()
@@ -202,10 +202,19 @@ async def join_activity_(db: AsyncSession, user: UserBase, activity_id: int):
         return {"message": "年级不符合要求"}
     if activity_info.collegeRestrictions and user.college not in activity_info.collegeRestrictions:
         return {"message": "学院不符合要求"}
-    if activity_info.tribeRestrictions and user.tribeId not in activity_info.tribeRestrictions:
-        return {"message": "部落不符合要求"}
+    if activity_info.tribeRestrictions:
+        for i in user.tribeId:
+            if i in activity_info.tribeRestrictions:
+                break
+        else:
+            return {"message": "部落不符合要求"}
     user.activityId[activity_id] = 0    # 0 为未开始，1 为签到成功，2 为签退成功
     await update_user(db, user.uid, user)
+    # 更新活动成员id
+    activity = await get_activity(db, activity_id)
+    activity: ActivityBase = ActivityBase.model_validate(activity)
+    activity.participantsIDs = activity.participantsIDs + [user.uid]
+    return await update_activity(db, activity_id, activity)
     return {"message": "加入成功"}
 
 async def check_in_activity(db: AsyncSession, uid: str, activity_id: int):
@@ -362,7 +371,7 @@ async def create_tribe(db: AsyncSession, tribe: TribeCreate):
     return {"id": db_tribe.uid, "message": "部落注册成功"}
 
 
-async def get_tribe(db: AsyncSession, tribe_id: str) -> Tribe:
+async def get_tribe(db: AsyncSession, tribe_id: int) -> Tribe:
     """
     根根据活动id获取活动具体信息
     :param db:
