@@ -10,6 +10,11 @@ from app.core.security import get_current_user, get_user
 from app.db.crud import set_credit as crud_set_credit, update_user
 from app.db.database import get_db
 
+from fastapi import Query, HTTPException
+import random
+from app.db.crud import get_activity as get_activity_by_id
+from app.schemas.activity import ActivityBase
+
 router = APIRouter(prefix="/credit", tags=["学时管理"])
 
 @router.get("/", response_model=CreditHours)
@@ -77,4 +82,62 @@ async def gift_credit():
     pass
 
 # 学时抽奖
+@router.post("/lottery")
+async def credit_lottery(
+        credit_type: str = Query(..., description="学时类型，如mentalGrowth、innovation等"),
+        base_credit_value: int = Query(..., ge=1, description="投入的基础学时值"),
+        current_user: UserBase = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+):
+    """
+    学时抽奖功能 - 用户自定义学时类型和基础值
+    :param credit_type: 学时类型，用户自定义选择
+    :param base_credit_value: 投入的基础学时值，用户自定义
+    :param current_user: 当前用户
+    :param db: 数据库会话
+    :return: 抽奖结果和获得的学时
+    """
+    # 1. 检查用户是否拥有足够的基础学时
+    user_credit_dict = current_user.model_dump()
+    current_credit = user_credit_dict["creditHours"].get(credit_type, 0)
+
+    if current_credit < base_credit_value:
+        raise HTTPException(status_code=400,
+                            detail=f"用户{credit_type}学时不足，当前拥有{current_credit}，需要{base_credit_value}")
+
+    # 2. 定义抽奖概率分布
+    lottery_config = {
+        "probability_distribution": [0.02,0.13, 0.2, 0.5, 0.2, 0.05, 0.01],  # 不同奖励等级的概率
+        "multiplier_levels": [0, 0.5,0.8, 1.0, 1.2, 1.5, 2.0]  # 不同等级的倍数
+    }
+
+    # 3. 执行抽奖算法
+    selected_level = random.choices(
+        lottery_config["multiplier_levels"],
+        weights=lottery_config["probability_distribution"]
+    )[0]
+
+    # 计算实际获得的学时
+    actual_credit = int(base_credit_value * selected_level)
+
+    # 4. 扣除基础学时并添加抽奖获得的学时
+    user_credit_dict["creditHours"][credit_type] = current_credit - base_credit_value + actual_credit
+
+    # 5. 更新数据库
+    updated_user: UserBase = UserBase(**user_credit_dict)
+    await update_user(db, current_user.uid, updated_user)
+
+    # 6. 返回抽奖结果
+    return {
+        "success": True,
+        "credit_type": credit_type,
+        "base_credit": base_credit_value,
+        "multiplier": selected_level,
+        "actual_credit": actual_credit,
+        "message": f"抽奖成功！投入{base_credit_value}个{credit_type}学时，获得{actual_credit}个{credit_type}学时"
+    }
+
+
+
+
 
