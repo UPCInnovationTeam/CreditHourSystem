@@ -1,7 +1,9 @@
 from typing import Any, Coroutine, Sequence
 from warnings import deprecated
+
+from PIL.ImageChops import offset
 from fastapi import HTTPException
-from sqlalchemy import select, Row, RowMapping, or_
+from sqlalchemy import select, Row, RowMapping, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.dbModels import User
@@ -11,7 +13,7 @@ from app.dependencies.tools import hash_password
 import logging
 from app.models.dbModels import Activity,Tribe
 from app.schemas.activity import ActivityCreate, ActivityUpdate, ActivityBase
-from app.schemas.tribe import TribeCreate,TribeBase
+from app.schemas.tribe import TribeCreate,TribeBase,TribeUpdate
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -410,3 +412,108 @@ async def set_tribe_status(db: AsyncSession,
     await db.commit()
     await db.refresh(tribe)
     return tribe
+
+<<<<<<< HEAD
+async def join_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
+    """
+    加入部落
+    """
+    if tribe_id in user.tribeId:
+        return {"message": "已加入"}
+
+    result = await db.execute(
+        select(Tribe).where(Tribe.uid == int(tribe_id)) # type: ignore
+    )
+    tribe = result.scalar_one_or_none()
+
+    if not tribe:
+        return {"message": "部落不存在"}
+
+    if user.name in tribe.members:
+        return {"message": "用户已经在部落里面"}
+
+    # 更新用户
+    user.tribeId.append(tribe_id)
+    await update_user(db, user.uid, user)
+
+    # 正确的数组字段更新方式 - 重新赋值而不是直接修改
+    tribe.members = tribe.members + [user.name] if tribe.members else [user.name]
+    tribe.memberNum = len(tribe.members)
+
+    await db.commit()
+    await db.refresh(tribe)
+
+    return {"message": "加入成功"}
+
+async def quit_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
+    """
+    退出部落
+    """
+    # 修复：user.tribeId 是列表，不是字典
+    if tribe_id not in user.tribeId:
+        return {"message": "未加入"}
+
+    user.tribeId.remove(tribe_id)
+    await update_user(db, user.uid, user)
+
+    result = await db.execute(
+        select(Tribe).where(Tribe.uid == int(tribe_id)) # type: ignore
+    )
+    tribe = result.scalar_one_or_none()
+
+    if user.name in tribe.members:
+        tribe.members = [member for member in tribe.members if member != user.name]
+    tribe.memberNum = len(tribe.members)
+
+    await db.commit()
+    await db.refresh(tribe)
+
+    return {"message": "退出成功"}
+
+async def update_tribe(db: AsyncSession, tribe_id: int,
+                       tribe: TribeUpdate):
+    """
+    更新部落信息
+    """
+    tribe_ori = await get_tribe(db, tribe_id)
+    if tribe_ori is None:
+        return {"message": "部落不存在"}
+    update_data = tribe.model_dump()
+    for key, value in update_data.items():
+        setattr(tribe_ori, key, value)
+    # 提交更改到数据库
+    await db.commit()
+    await db.refresh(tribe_ori)
+    return {"message": "更新成功"}
+=======
+from app.schemas.user import PageResponse as UserPageResponse
+async def get_page_users(db: AsyncSession, page: int, page_size: int) -> UserPageResponse:
+    """
+    获取所有用户信息
+    :param db:
+    :param page: 页数
+    :param page_size: 每页用户数量
+    :return: PageResponse
+    """
+    offset = (page - 1) * page_size # 计算偏移量
+
+    # 查询总共的用户数量
+    total_result = await db.execute(select(func.count(User.uid)))
+    total_users = len(total_result.scalars().all())
+
+    # 通过偏移量获取用户列表'
+    tmp = select(User).offset(offset).limit(page_size)
+    result = await db.execute(tmp)
+    users = result.scalars().all()
+
+    # orm转pydantic
+    user_items = [UserBase.model_validate(user) for user in users]
+
+    # 构造PageResponse
+    return UserPageResponse(
+        items=user_items,
+        total=total_users,
+        page=page,
+        size=page_size,
+    )
+>>>>>>> d4bf42d9a8e5894283c44db9bd8d9a5d9679f838

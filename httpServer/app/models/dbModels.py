@@ -14,7 +14,7 @@ class User(Base):
     major = Column(String)
     class_ = Column(String)
     college = Column(String)
-    tribeId = Column(ARRAY(String), nullable=True)
+    tribeId = Column(ARRAY(Integer), nullable=True)
     activityId = Column(JSON, nullable=True)
     creditHours = Column(JSON, nullable=True)
     password = Column(String)
@@ -61,6 +61,7 @@ class Tribe(Base):
     college = Column(String, index=True)
     manager = Column(ARRAY(String), default=[])
     members = Column(ARRAY(String), default=[])
+    memberNum = Column(Integer)
     activityID = Column(ARRAY(String), default=[])
     """
     部落名称，所属学院
