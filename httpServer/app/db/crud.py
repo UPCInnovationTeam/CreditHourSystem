@@ -1,7 +1,9 @@
 from typing import Any, Coroutine, Sequence
 from warnings import deprecated
+
+from PIL.ImageChops import offset
 from fastapi import HTTPException
-from sqlalchemy import select, Row, RowMapping, or_
+from sqlalchemy import select, Row, RowMapping, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.dbModels import User
@@ -410,3 +412,34 @@ async def set_tribe_status(db: AsyncSession,
     await db.commit()
     await db.refresh(tribe)
     return tribe
+
+from app.schemas.user import PageResponse as UserPageResponse
+async def get_page_users(db: AsyncSession, page: int, page_size: int) -> UserPageResponse:
+    """
+    获取所有用户信息
+    :param db:
+    :param page: 页数
+    :param page_size: 每页用户数量
+    :return: PageResponse
+    """
+    offset = (page - 1) * page_size # 计算偏移量
+
+    # 查询总共的用户数量
+    total_result = await db.execute(select(func.count(User.uid)))
+    total_users = len(total_result.scalars().all())
+
+    # 通过偏移量获取用户列表'
+    tmp = select(User).offset(offset).limit(page_size)
+    result = await db.execute(tmp)
+    users = result.scalars().all()
+
+    # orm转pydantic
+    user_items = [UserBase.model_validate(user) for user in users]
+
+    # 构造PageResponse
+    return UserPageResponse(
+        items=user_items,
+        total=total_users,
+        page=page,
+        size=page_size,
+    )

@@ -29,7 +29,7 @@ class UserCreate(UserBase):
     code: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserLogin(BaseModel):
     """
@@ -40,4 +40,13 @@ class UserLogin(BaseModel):
     password: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class PageResponse(BaseModel):
+    """
+    分页响应模型
+    """
+    items: list[UserBase]
+    total: int
+    page: int
+    size: int
