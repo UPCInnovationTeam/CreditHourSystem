@@ -1,8 +1,9 @@
 from typing import Any, Coroutine, Sequence
 from warnings import deprecated
-
+from fastapi import HTTPException
 from sqlalchemy import select, Row, RowMapping, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.dbModels import User
 from app.schemas.user import UserBase,UserCreate,UserLogin
 from datetime import datetime
@@ -14,6 +15,12 @@ from app.schemas.tribe import TribeCreate,TribeBase
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+def some_function():
+    # 在函数内部导入，避免循环导入
+    from app.api.v1.tribes import update_tribe
+    # 使用 update_tribe
+
 
 async def create_user(db: AsyncSession, user: UserCreate):
     """
@@ -98,6 +105,7 @@ async def update_user(db: AsyncSession, uid: str, user: UserBase) -> UserBase:
 
     # 将Pydantic模型转换为字典并更新ORM对象
     update_data = user.model_dump(exclude_unset=True)
+    #确保值更新实际的字段，避免将None写入数据库
     logger.info(f"更新用户信息：{update_data}")
     for key, value in update_data.items():
         setattr(db_user, key, value)
@@ -346,17 +354,22 @@ async def create_tribe(db: AsyncSession, tribe: TribeCreate):
     """
     result = await db.execute(select(Tribe).order_by(Tribe.uid.desc()).limit(1))
     last_tribe = result.scalar_one_or_none()
-    tribe.uid = str(int(last_tribe.uid) + 1) if last_tribe else "1"
+    tribe.uid = int(last_tribe.uid) + 1 if last_tribe else 1
     db_tribe = Tribe(**tribe.model_dump())
     db.add(db_tribe)
     await db.commit()
     await db.refresh(db_tribe)
     return {"id": db_tribe.uid, "message": "部落注册成功"}
 
-async def get_tribe(db: AsyncSession, tribe_id: str) -> TribeBase:
+
+async def get_tribe(db: AsyncSession, tribe_id: str) -> Tribe:
     """
-    根据部落id获取部落具体信息
+    根根据活动id获取活动具体信息
+    :param db:
+    :param tribe_id: 活动id
+    :return: 活动信息
     """
+    tribe_id = int(tribe_id)
     result = await db.execute(select(Tribe).where(Tribe.uid == tribe_id))  # type: ignore
     result = result.scalar_one_or_none()
     return result
@@ -366,6 +379,25 @@ async def get_tribe_by_user(db: AsyncSession, username: str):
     根据用户名成员查询对应部落
     """
     result = await db.execute(select(Tribe).where(
-        or_(Tribe.member.contains(username))))
+        or_(Tribe.members.contains(username))))
     result = result.scalar_one_or_none()
     return result
+
+
+async def set_tribe_status(db: AsyncSession,
+                           tribe_id: int,
+                           status: str):
+    """
+    更新部落状态
+    :param db:
+    :param tribe_id:部落ID
+    :param status:
+    :return:更新后部落信息
+    """
+    tribe = await get_tribe(db, tribe_id)
+    if not tribe:
+        raise HTTPException(status_code=404, detail="部落不存在")
+    tribe.status = status
+    await db.commit()
+    await db.refresh(tribe)
+    return tribe

@@ -31,6 +31,7 @@ async def register(user: UserCreate, db = Depends(get_db)):
     return await create_user(db, user)
 
 @router.get("/verify_code")
+#发送邮箱验证码
 async def get_verify_code(email: str):
     await send_verify_code(email)
     return {"status": "success"}

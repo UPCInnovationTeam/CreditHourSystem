@@ -17,7 +17,6 @@ class UserBase(BaseModel):
     creditHours: dict[str, int] = None
 
     class Config:
-        orm_mode = True
         from_attributes = True#允许从对象属性中读取数据
 
 class UserCreate(UserBase):

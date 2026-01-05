@@ -21,6 +21,7 @@ SessionLocal = async_sessionmaker(
 
 # 创建ORM
 Base = declarative_base()
+#供 dbModels 中的模型类继承使用
 
 # 获取数据库会话
 async def get_db():
