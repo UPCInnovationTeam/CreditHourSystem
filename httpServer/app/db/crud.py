@@ -70,6 +70,27 @@ async def get_user(db: AsyncSession, uid: str) -> UserBase:
 
     return UserBase.model_validate(db_user)
 
+
+async def get_user_by_name(db: AsyncSession, name: str) -> UserBase:
+    """
+    根据姓名获取用户信息
+    :param db: 数据库会话对象
+    :param name: 用户姓名
+    :return: 匹配的用户信息
+    """
+    logger.info(f"根据姓名获取用户信息，姓名：{name}")
+
+    # 使用正确的查询语法
+    result = await db.execute(select(User).where( User.name == name))
+    db_user = result.scalar_one_or_none()
+
+    if db_user is None:
+        logger.warning(f"用户不存在，姓名：{name}")
+        raise ValueError("用户不存在")
+
+    return UserBase.model_validate(db_user)
+
+
 async def get_user_password(db: AsyncSession, uid: str) -> str:
     """
     根据UID获取用户密码
@@ -119,6 +140,31 @@ async def update_user(db: AsyncSession, uid: str, user: UserBase) -> UserBase:
 
     # 返回更新后的用户信息（Pydantic模型）
     return UserBase.model_validate(db_user)
+
+
+async def delete_user(db: AsyncSession, uid: str) -> bool:
+    """
+    根据UID删除用户
+    :param db: 数据库会话对象
+    :param uid: 用户的UID
+    :return: 删除是否成功
+    """
+    logger.info(f"删除用户，UID：{uid}")
+
+    # 获取现有的用户ORM对象
+    result = await db.execute(select(User).where(User.uid == uid))
+    db_user = result.scalar_one_or_none()
+
+    if db_user is None:
+        logger.warning(f"用户不存在，UID：{uid}")
+        raise ValueError("用户不存在")
+
+    # 从数据库中删除用户
+    await db.delete(db_user)
+    await db.commit()
+
+    logger.info(f"用户已成功删除，UID：{uid}")
+    return True
 
 
 async def login(db: AsyncSession, user: UserLogin) -> str:
