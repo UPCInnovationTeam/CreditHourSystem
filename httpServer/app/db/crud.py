@@ -5,6 +5,7 @@ from PIL.ImageChops import offset
 from fastapi import HTTPException
 from sqlalchemy import select, Row, RowMapping, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.coercions import expect
 
 from app.models.dbModels import User
 from app.schemas.user import UserBase,UserCreate,UserLogin
@@ -380,9 +381,14 @@ async def get_tribe(db: AsyncSession, tribe_id: int) -> Tribe:
     :param tribe_id: 活动id
     :return: 活动信息
     """
+
+
     tribe_id = int(tribe_id)
     result = await db.execute(select(Tribe).where(Tribe.uid == tribe_id))  # type: ignore
     result = result.scalar_one_or_none()
+
+    if result is None:
+        raise HTTPException(status_code=404, detail="部落不存在")
     return result
 
 async def get_tribe_by_user(db: AsyncSession, username: str):

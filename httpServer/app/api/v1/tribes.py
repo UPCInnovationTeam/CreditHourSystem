@@ -66,8 +66,7 @@ async def update_tribe(tribe_id:int,
 async def quit_tribe(tribe_id: int,
                      current_user: UserBase = Depends(get_current_user),
                      db: AsyncSession = Depends(get_db)):
-    if current_user.identity != "管理员":
-        raise HTTPException(status_code=400, detail="权限不足")
+
 
     from app.db.crud import quit_tribe_
     return await quit_tribe_(db, current_user, tribe_id)
