@@ -65,6 +65,7 @@ async def update_identity(identity: str = Body(...),
 
 from app.schemas.user import PageResponse
 from app.db.crud import get_page_users
+
 @router.get("/pages", response_model=PageResponse)
 async def get_users(page: int = Query(1, description="页数", ge=1),
                     page_size: int = Query(50, description="每页返回的数量", le=100),

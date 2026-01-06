@@ -413,6 +413,21 @@ async def set_tribe_status(db: AsyncSession,
     await db.refresh(tribe)
     return tribe
 
+
+async def update_tribe_member_count(db: AsyncSession, tribe_id: int, new_member_count: int):
+    """
+    更新部落成员数量
+    """
+    tribe = await get_tribe(db, tribe_id)
+    if not tribe:
+        return {"message": "部落不存在"}
+
+    tribe.memberNum = new_member_count
+    await db.commit()
+    await db.refresh(tribe)
+    return {"message": "成员数量更新成功", "memberNum": tribe.memberNum}
+
+
 async def join_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
     """
     加入部落
@@ -428,27 +443,28 @@ async def join_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
     if not tribe:
         return {"message": "部落不存在"}
 
-    if user.name in tribe.members:
+    current_members = tribe.members if tribe.members else []
+    if user.name in current_members:
         return {"message": "用户已经在部落里面"}
 
     # 更新用户
     user.tribeId.append(tribe_id)
     await update_user(db, user.uid, user)
 
-    # 正确的数组字段更新方式 - 重新赋值而不是直接修改
-    tribe.members = tribe.members + [user.name] if tribe.members else [user.name]
-    tribe.memberNum = len(tribe.members)
+    #构建新的成员列表
+    new_members = current_members + [user.name]
+    tribe.members = new_members
+    tribe.memberNum = len(new_members)
 
-    await db.commit()
-    await db.refresh(tribe)
+    await update_tribe_member_count(db, tribe_id, len(new_members))
 
-    return {"message": "加入成功"}
+    return {"message": "加入成功", "memberNum": len(new_members)}
 
 async def quit_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
     """
     退出部落
     """
-    # 修复：user.tribeId 是列表，不是字典
+    #检查是否加入
     if tribe_id not in user.tribeId:
         return {"message": "未加入"}
 
@@ -460,9 +476,12 @@ async def quit_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
     )
     tribe = result.scalar_one_or_none()
 
-    if user.name in tribe.members:
-        tribe.members = [member for member in tribe.members if member != user.name]
-    tribe.memberNum = len(tribe.members)
+    current_members = tribe.members if tribe.members else []
+    if user.name in current_members:
+        current_members = [member for member in current_members if member != user.name]
+
+    tribe.members = current_members
+    tribe.memberNum = len(current_members)
 
     await db.commit()
     await db.refresh(tribe)

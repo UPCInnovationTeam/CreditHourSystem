@@ -45,7 +45,7 @@ async def join_tribe(tribe_id: int,
     """
     用户加入指定ID的部落
 
-    :param tribe_id: 要加入的活动ID
+    :param tribe_id: 要加入的部落ID
     :param current_user: 通过依赖注入获取的当前登录用户信息
     :param db: 通过依赖注入获取的数据库会话
     :return: 加入活动的结果信息
@@ -66,8 +66,6 @@ async def update_tribe(tribe_id:int,
 async def quit_tribe(tribe_id: int,
                      current_user: UserBase = Depends(get_current_user),
                      db: AsyncSession = Depends(get_db)):
-    if current_user.identity != "管理员":
-        raise HTTPException(status_code=400, detail="权限不足")
 
     from app.db.crud import quit_tribe_
     return await quit_tribe_(db, current_user, tribe_id)
