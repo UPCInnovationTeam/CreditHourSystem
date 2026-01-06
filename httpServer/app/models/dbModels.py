@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, JSON,Integer,DateTime
 from sqlalchemy.dialects.postgresql import ARRAY
 from app.db.database import Base
-from datetime import datetime
+from datetime import datetime,date
 
 
 class User(Base):
@@ -67,3 +67,46 @@ class Tribe(Base):
     部落名称，所属学院
     部落管理者列表，部落成员列表，部落关联活动ID列表
     """
+
+#日活数据表
+from sqlalchemy import Column, String, Integer, DateTime
+from app.db.database import Base
+
+
+
+class DailyStatsSummary(Base):
+    __tablename__ = "daily_stats_summary"
+
+    uid = Column(Integer, primary_key=True, index=True)
+    stat_date = Column(String, nullable=False, unique=True, index=True)  # 统计日期，格式：YYYY-MM-DD
+    dau_count = Column(Integer, nullable=False, default=0)  # 日活跃用户数
+    new_users_count = Column(Integer, nullable=False, default=0)  # 新增用户数
+    total_users_count = Column(Integer, nullable=False, default=0)  # 累计用户数
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+"""
+    日活汇总表：每日活跃用户、新增用户、累计用户统计
+    - stat_date: 统计日期
+    - dau_count: 日活跃用户数
+    - new_users_count: 新增用户数
+    - total_users_count: 累计用户数
+    """
+
+class DailyActiveUserStats(Base):
+    __tablename__ = "daily_active_user_stats"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    stat_date = Column(String, nullable=False, index=True)  # 统计日期，格式：YYYY-MM-DD
+    user_id = Column(String, nullable=False, index=True)    # 用户ID
+    platform = Column(String, nullable=True, default='web')  # 平台标识
+    created_at = Column(DateTime, default=datetime.utcnow)   # 创建时间
+
+    """
+    日活跃用户统计表：记录每日用户活跃情况
+    - stat_date: 统计日期
+    - user_id: 用户ID
+    - platform: 平台标识
+    """
+
+
+

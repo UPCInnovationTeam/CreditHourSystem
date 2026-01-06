@@ -81,7 +81,10 @@ async def trade_credit(trade_credit: CreditHours,
 async def gift_credit():
     pass
 
+
 # 学时抽奖
+from app.core.config import lottery_config
+
 @router.post("/lottery")
 async def credit_lottery(
         credit_type: str = Query(..., description="学时类型，如mentalGrowth、innovation等"),
@@ -104,12 +107,6 @@ async def credit_lottery(
     if current_credit < base_credit_value:
         raise HTTPException(status_code=400,
                             detail=f"用户{credit_type}学时不足，当前拥有{current_credit}，需要{base_credit_value}")
-
-    # 2. 定义抽奖概率分布
-    lottery_config = {
-        "probability_distribution": [0.02,0.13, 0.2, 0.5, 0.2, 0.05, 0.01],  # 不同奖励等级的概率
-        "multiplier_levels": [0, 0.5,0.8, 1.0, 1.2, 1.5, 2.0]  # 不同等级的倍数
-    }
 
     # 3. 执行抽奖算法
     selected_level = random.choices(
@@ -136,6 +133,7 @@ async def credit_lottery(
         "actual_credit": actual_credit,
         "message": f"抽奖成功！投入{base_credit_value}个{credit_type}学时，获得{actual_credit}个{credit_type}学时"
     }
+
 
 
 
