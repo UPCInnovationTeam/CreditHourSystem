@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from app.schemas.user import UserBase,UserCreate
 from app.core.security import get_current_user
 from app.db.database import get_db
-from app.db.crud import create_user, update_user
+from app.db.crud import create_user, update_user, bulk_create_users_from_dicts
 from app.dependencies.tools import verify_code
 from app.dependencies.tools import send_verify_code
 import logging
 from app.core.config import identity_pwd
-
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.crud import get_user as get_user_by_uid , get_user_by_name, delete_user
 
 
@@ -152,4 +152,17 @@ async def get_users(page: int = Query(1, description="页数", ge=1),
         raise HTTPException(status_code=400, detail=f"无权限")
     logger.info(f"{current_user.uid}获取用户列表: {page}, {page_size}")
     return await get_page_users(db, page, page_size)
+
+@router.post("/users/batch", response_model=dict)
+async def admin_batch_create_users(user_dicts:list[dict],
+                                   current_user: UserBase = Depends(get_current_user),
+                                   db: AsyncSession = Depends(get_db)):
+    if current_user.identity != "管理员":
+        raise HTTPException(status_code=400, detail=f"无权限")
+    created_users = await bulk_create_users_from_dicts(db, user_dicts)
+    return {
+        "massage": "批量创建用户成功",
+        "count": len(created_users),
+        "users": created_users
+    }
 

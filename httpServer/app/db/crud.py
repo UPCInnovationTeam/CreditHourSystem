@@ -24,6 +24,57 @@ def some_function():
     from app.api.v1.tribes import update_tribe
     # 使用 update_tribe
 
+async def bulk_create_users_from_dicts(db: AsyncSession, user_dicts: list[dict]):
+    """
+    从用户字典列表批量创建用户
+    """
+    created_users= []
+    db_users = []
+    for user_dict in user_dicts:
+        # 移除不需要的信息
+        user_dict.pop('email', None)
+        user_dict.pop('code', None)
+        user_dict["password"] = hash_password(user_dict["password"])
+
+        # 初始化
+        user_dict["registerTime"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        user_dict["tribeId"] = []
+        user_dict["activityId"] = {}
+        user_dict["creditHours"] = {"mentalGrowth": 0, "innovation": 0, "culturalSports": 0, "socialPractice": 0, "skill": 0}
+
+        db_user = User(**user_dict)
+        db_users.append(db_user)
+        created_users.append(UserBase(**user_dict))
+
+    db.add_all(db_users)
+    await db.commit()
+
+    for db_users in db_users:
+        await db.refresh(db_users)
+
+    return created_users
+
+
+async def admin_bulk_create_users(db: AsyncSession, user_dicts: list[dict], creating_user: UserBase):
+    """
+    管理员批量创建用户
+    :param db:
+    :param user_dicts: 用户字典列表
+    :param creating_user: 创建用户（需为管理员）
+    """
+    # 验证创建用户权限
+    if creating_user.identity != "管理员":
+        raise HTTPException(status_code=403, detail="无权限")
+
+    # 创建用户
+    created_users = await bulk_create_users_from_dicts(db, user_dicts)
+
+    return {
+        "message": f"管理员 {creating_user.name} 批量创建用户成功",
+        "count": len(created_users),
+        "users": created_users
+    }
+
 
 async def create_user(db: AsyncSession, user: UserCreate):
     """
@@ -502,7 +553,7 @@ async def join_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
         return {"message": "部落不存在"}
 
     current_members = tribe.members if tribe.members else []
-    if user.name in current_members:
+    if user.uid in current_members:
         return {"message": "用户已经在部落里面"}
 
     # 更新用户
@@ -510,7 +561,7 @@ async def join_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
     await update_user(db, user.uid, user)
 
     #构建新的成员列表
-    new_members = current_members + [user.name]
+    new_members = current_members + [user.uid]
     tribe.members = new_members
     tribe.memberNum = len(new_members)
 
@@ -535,8 +586,8 @@ async def quit_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
     tribe = result.scalar_one_or_none()
 
     current_members = tribe.members if tribe.members else []
-    if user.name in current_members:
-        current_members = [member for member in current_members if member != user.name]
+    if user.uid in current_members:
+        current_members = [member for member in current_members if member != user.uid]
 
     tribe.members = current_members
     tribe.memberNum = len(current_members)

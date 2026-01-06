@@ -1,3 +1,4 @@
+import logging
 from warnings import deprecated
 from zoneinfo import reset_tzpath
 
@@ -14,6 +15,9 @@ from fastapi import Query, HTTPException
 import random
 from app.db.crud import get_activity as get_activity_by_id
 from app.schemas.activity import ActivityBase
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 router = APIRouter(prefix="/credit", tags=["学时管理"])
 
@@ -75,7 +79,6 @@ async def trade_credit(trade_credit: CreditHours,
     return {"success": True}
 
 
-
 # 学时赠送
 @router.post("/gift")
 async def gift_credit():
@@ -84,7 +87,7 @@ async def gift_credit():
 
 # 学时抽奖
 from app.core.config import lottery_config
-
+from app.dependencies.lottery import credit_lottery as cl
 @router.post("/lottery")
 async def credit_lottery(
         credit_type: str = Query(..., description="学时类型，如mentalGrowth、innovation等"),
@@ -109,10 +112,11 @@ async def credit_lottery(
                             detail=f"用户{credit_type}学时不足，当前拥有{current_credit}，需要{base_credit_value}")
 
     # 3. 执行抽奖算法
-    selected_level = random.choices(
-        lottery_config["multiplier_levels"],
-        weights=lottery_config["probability_distribution"]
-    )[0]
+    # selected_level = random.choices(
+    #     lottery_config["multiplier_levels"],
+    #     weights=lottery_config["probability_distribution"]
+    # )[0]
+    selected_level, user_credit_dict = await cl(db, current_user)
 
     # 计算实际获得的学时
     actual_credit = int(base_credit_value * selected_level)
@@ -124,6 +128,11 @@ async def credit_lottery(
     updated_user: UserBase = UserBase(**user_credit_dict)
     await update_user(db, current_user.uid, updated_user)
 
+    logger.info(f""
+                       f"用户{current_user.uid}抽奖成功！"
+                       f"投入{base_credit_value}个{credit_type}学时，"
+                       f"获得{actual_credit}个{credit_type}学时")
+
     # 6. 返回抽奖结果
     return {
         "success": True,
@@ -134,7 +143,9 @@ async def credit_lottery(
         "message": f"抽奖成功！投入{base_credit_value}个{credit_type}学时，获得{actual_credit}个{credit_type}学时"
     }
 
-
+@router.get("/lottery_config", response_model=dict[str, list[float]])
+async def get_lottery_config():
+    return lottery_config
 
 
 

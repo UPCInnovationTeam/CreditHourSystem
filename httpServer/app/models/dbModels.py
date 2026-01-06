@@ -19,6 +19,7 @@ class User(Base):
     creditHours = Column(JSON, nullable=True)
     password = Column(String)
     registerTime = Column(String)
+    lottery_streak = Column(Integer, default=0)
     """
     用户uid，姓名，身份，年级，专业，班级，学院，
     所属部落ID列表，参与活动ID列表
