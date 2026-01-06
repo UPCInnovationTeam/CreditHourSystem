@@ -14,7 +14,7 @@ class User(Base):
     major = Column(String)
     class_ = Column(String)
     college = Column(String)
-    tribeId = Column(ARRAY(String), nullable=True)
+    tribeId = Column(ARRAY(Integer), nullable=True)
     activityId = Column(JSON, nullable=True)
     creditHours = Column(JSON, nullable=True)
     password = Column(String)
@@ -38,7 +38,7 @@ class Activity(Base):
     #人数限制，当前报名人数，报名人id
     maxParticipants = Column(Integer,nullable=False)
     currentParticipants = Column(Integer,nullable=False)
-    participantsIDs = Column(ARRAY(Integer),nullable=False)
+    participantsIDs = Column(ARRAY(String),nullable=False)
     #活动基本信息
     title = Column(String,nullable=False)
     content = Column(String,nullable=False)
@@ -56,11 +56,12 @@ class Activity(Base):
 
 class Tribe(Base):
     __tablename__ = "tribe"
-    uid = Column(String, primary_key=True, index=True)
+    uid = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     college = Column(String, index=True)
     manager = Column(ARRAY(String), default=[])
     members = Column(ARRAY(String), default=[])
+    memberNum = Column(Integer)
     activityID = Column(ARRAY(String), default=[])
     """
     部落名称，所属学院

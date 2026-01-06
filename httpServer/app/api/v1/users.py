@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from app.schemas.user import UserBase,UserCreate
 from app.core.security import get_current_user
 from app.db.database import get_db
@@ -34,6 +34,7 @@ async def register(user: UserCreate, db = Depends(get_db)):
     return await create_user(db, user)
 
 @router.get("/verify_code")
+#发送邮箱验证码
 async def get_verify_code(email: str):
     await send_verify_code(email)
     return {"status": "success"}
@@ -139,4 +140,16 @@ async def delete_user_by_uid(
 
 
 
+from app.schemas.user import PageResponse
+from app.db.crud import get_page_users
+
+@router.get("/pages", response_model=PageResponse)
+async def get_users(page: int = Query(1, description="页数", ge=1),
+                    page_size: int = Query(50, description="每页返回的数量", le=100),
+                    db = Depends(get_db),
+                    current_user: UserBase = Depends(get_current_user)):
+    if current_user.identity != "管理员":
+        raise HTTPException(status_code=400, detail=f"无权限")
+    logger.info(f"{current_user.uid}获取用户列表: {page}, {page_size}")
+    return await get_page_users(db, page, page_size)
 

@@ -99,14 +99,6 @@ async def update_activity(activity_id:int,
                           status:str,
                           current_user: UserBase = Depends(get_current_user),
                           db : AsyncSession = Depends(get_db)):
-    """
-    根据关键词搜索活动和部落信息
-
-    :param keyword: 搜索关键词，通过Query参数传入
-    :param db: 数据库会话，通过依赖注入获取
-    :param current_user: 当前登录用户信息，通过依赖注入获取
-    :return: 包含活动和部落搜索结果的字典，格式为{"activity": [活动ID列表], "tribe": [部落ID列表]}
-    """
     if current_user.identity != "管理员":
         raise HTTPException(status_code=400, detail="权限不足")
     return await set_activity_status(db, activity_id, status)

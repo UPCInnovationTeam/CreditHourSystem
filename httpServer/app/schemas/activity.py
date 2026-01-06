@@ -30,16 +30,15 @@ class ActivityBase(BaseModel):
 
     #Pydantic 模型配置类，开启ORM模式，允许从ORM对象中读取数据
     class Config:
-        orm_mode = True
         from_attributes = True
 
     #ActivityCreate 模型，用于创建活动时的数据验证
 class ActivityCreate(ActivityBase):
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 #ActivityUpdate 模型，用于更新活动时的数据验证
 class ActivityUpdate(ActivityBase):
 
     class Config:
-        orm_mode = True
+        from_attributes = True

@@ -1,8 +1,12 @@
 from typing import Any, Coroutine, Sequence
 from warnings import deprecated
 
-from sqlalchemy import select, Row, RowMapping, or_
+from PIL.ImageChops import offset
+from fastapi import HTTPException
+from sqlalchemy import select, Row, RowMapping, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.coercions import expect
+
 from app.models.dbModels import User
 from app.schemas.user import UserBase,UserCreate,UserLogin
 from datetime import datetime
@@ -10,10 +14,16 @@ from app.dependencies.tools import hash_password
 import logging
 from app.models.dbModels import Activity,Tribe
 from app.schemas.activity import ActivityCreate, ActivityUpdate, ActivityBase
-from app.schemas.tribe import TribeCreate,TribeBase
+from app.schemas.tribe import TribeCreate,TribeBase,TribeUpdate
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+def some_function():
+    # 在函数内部导入，避免循环导入
+    from app.api.v1.tribes import update_tribe
+    # 使用 update_tribe
+
 
 async def create_user(db: AsyncSession, user: UserCreate):
     """
@@ -48,7 +58,7 @@ async def get_user(db: AsyncSession, uid: str) -> UserBase:
     :param uid: 用户的UID
     :return: 返回用户信息(pydantic模型)
     """
-    logger.info(f"获取用户信息，UID：{uid}")
+    # logger.info(f"获取用户信息，UID：{uid}")
     # 获取现有的用户ORM对象
     result = await db.execute(select(User).where(User.uid == uid))  # type: ignore
     db_user = result.scalar_one_or_none()
@@ -119,6 +129,7 @@ async def update_user(db: AsyncSession, uid: str, user: UserBase) -> UserBase:
 
     # 将Pydantic模型转换为字典并更新ORM对象
     update_data = user.model_dump(exclude_unset=True)
+    #确保值更新实际的字段，避免将None写入数据库
     logger.info(f"更新用户信息：{update_data}")
     for key, value in update_data.items():
         setattr(db_user, key, value)
@@ -240,10 +251,19 @@ async def join_activity_(db: AsyncSession, user: UserBase, activity_id: int):
         return {"message": "年级不符合要求"}
     if activity_info.collegeRestrictions and user.college not in activity_info.collegeRestrictions:
         return {"message": "学院不符合要求"}
-    if activity_info.tribeRestrictions and user.tribeId not in activity_info.tribeRestrictions:
-        return {"message": "部落不符合要求"}
+    if activity_info.tribeRestrictions:
+        for i in user.tribeId:
+            if i in activity_info.tribeRestrictions:
+                break
+        else:
+            return {"message": "部落不符合要求"}
     user.activityId[activity_id] = 0    # 0 为未开始，1 为签到成功，2 为签退成功
     await update_user(db, user.uid, user)
+    # 更新活动成员id
+    activity = await get_activity(db, activity_id)
+    activity: ActivityBase = ActivityBase.model_validate(activity)
+    activity.participantsIDs = activity.participantsIDs + [user.uid]
+    return await update_activity(db, activity_id, activity)
     return {"message": "加入成功"}
 
 async def check_in_activity(db: AsyncSession, uid: str, activity_id: int):
@@ -392,19 +412,29 @@ async def create_tribe(db: AsyncSession, tribe: TribeCreate):
     """
     result = await db.execute(select(Tribe).order_by(Tribe.uid.desc()).limit(1))
     last_tribe = result.scalar_one_or_none()
-    tribe.uid = str(int(last_tribe.uid) + 1) if last_tribe else "1"
+    tribe.uid = int(last_tribe.uid) + 1 if last_tribe else 1
     db_tribe = Tribe(**tribe.model_dump())
     db.add(db_tribe)
     await db.commit()
     await db.refresh(db_tribe)
     return {"id": db_tribe.uid, "message": "部落注册成功"}
 
-async def get_tribe(db: AsyncSession, tribe_id: str) -> TribeBase:
+
+async def get_tribe(db: AsyncSession, tribe_id: int) -> Tribe:
     """
-    根据部落id获取部落具体信息
+    根根据活动id获取活动具体信息
+    :param db:
+    :param tribe_id: 活动id
+    :return: 活动信息
     """
+
+
+    tribe_id = int(tribe_id)
     result = await db.execute(select(Tribe).where(Tribe.uid == tribe_id))  # type: ignore
     result = result.scalar_one_or_none()
+
+    if result is None:
+        raise HTTPException(status_code=404, detail="部落不存在")
     return result
 
 async def get_tribe_by_user(db: AsyncSession, username: str):
@@ -412,6 +442,148 @@ async def get_tribe_by_user(db: AsyncSession, username: str):
     根据用户名成员查询对应部落
     """
     result = await db.execute(select(Tribe).where(
-        or_(Tribe.member.contains(username))))
+        or_(Tribe.members.contains(username))))
     result = result.scalar_one_or_none()
     return result
+
+
+async def set_tribe_status(db: AsyncSession,
+                           tribe_id: int,
+                           status: str):
+    """
+    更新部落状态
+    :param db:
+    :param tribe_id:部落ID
+    :param status:
+    :return:更新后部落信息
+    """
+    tribe = await get_tribe(db, tribe_id)
+    if not tribe:
+        raise HTTPException(status_code=404, detail="部落不存在")
+    tribe.status = status
+    await db.commit()
+    await db.refresh(tribe)
+    return tribe
+
+
+async def update_tribe_member_count(db: AsyncSession, tribe_id: int, new_member_count: int):
+    """
+    更新部落成员数量
+    """
+    tribe = await get_tribe(db, tribe_id)
+    if not tribe:
+        return {"message": "部落不存在"}
+
+    tribe.memberNum = new_member_count
+    await db.commit()
+    await db.refresh(tribe)
+    return {"message": "成员数量更新成功", "memberNum": tribe.memberNum}
+
+
+async def join_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
+    """
+    加入部落
+    """
+    if tribe_id in user.tribeId:
+        return {"message": "已加入"}
+
+    result = await db.execute(
+        select(Tribe).where(Tribe.uid == int(tribe_id)) # type: ignore
+    )
+    tribe = result.scalar_one_or_none()
+
+    if not tribe:
+        return {"message": "部落不存在"}
+
+    current_members = tribe.members if tribe.members else []
+    if user.name in current_members:
+        return {"message": "用户已经在部落里面"}
+
+    # 更新用户
+    user.tribeId.append(tribe_id)
+    await update_user(db, user.uid, user)
+
+    #构建新的成员列表
+    new_members = current_members + [user.name]
+    tribe.members = new_members
+    tribe.memberNum = len(new_members)
+
+    await update_tribe_member_count(db, tribe_id, len(new_members))
+
+    return {"message": "加入成功", "memberNum": len(new_members)}
+
+async def quit_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
+    """
+    退出部落
+    """
+    #检查是否加入
+    if tribe_id not in user.tribeId:
+        return {"message": "未加入"}
+
+    user.tribeId.remove(tribe_id)
+    await update_user(db, user.uid, user)
+
+    result = await db.execute(
+        select(Tribe).where(Tribe.uid == int(tribe_id)) # type: ignore
+    )
+    tribe = result.scalar_one_or_none()
+
+    current_members = tribe.members if tribe.members else []
+    if user.name in current_members:
+        current_members = [member for member in current_members if member != user.name]
+
+    tribe.members = current_members
+    tribe.memberNum = len(current_members)
+
+    await db.commit()
+    await db.refresh(tribe)
+
+    return {"message": "退出成功"}
+
+async def update_tribe(db: AsyncSession, tribe_id: int,
+                       tribe: TribeUpdate):
+    """
+    更新部落信息
+    """
+    tribe_ori = await get_tribe(db, tribe_id)
+    if tribe_ori is None:
+        return {"message": "部落不存在"}
+    update_data = tribe.model_dump()
+    for key, value in update_data.items():
+        setattr(tribe_ori, key, value)
+    # 提交更改到数据库
+    await db.commit()
+    await db.refresh(tribe_ori)
+    return {"message": "更新成功"}
+
+from app.schemas.user import PageResponse as UserPageResponse
+async def get_page_users(db: AsyncSession, page: int, page_size: int) -> UserPageResponse:
+    """
+    获取所有用户信息
+    :param db:
+    :param page: 页数
+    :param page_size: 每页用户数量
+    :return: PageResponse
+    """
+    offset = (page - 1) * page_size # 计算偏移量
+
+    # 查询总共的用户数量
+    total_result = await db.execute(select(func.count(User.uid)))
+    total_users = len(total_result.scalars().all())
+
+    # 通过偏移量获取用户列表'
+    tmp = select(User).offset(offset).limit(page_size)
+    result = await db.execute(tmp)
+    users = result.scalars().all()
+
+    # orm转pydantic
+    user_items = [UserBase.model_validate(user) for user in users]
+
+    # 构造PageResponse
+    return UserPageResponse(
+        items=user_items,
+        total=total_users,
+        page=page,
+        size=page_size,
+    )
+

@@ -12,12 +12,11 @@ class UserBase(BaseModel):
     major: str
     class_: str
     college: str
-    tribeId: list[str] =  None
+    tribeId: list[int] =  None
     activityId: dict[int, int] = None   # str是活动id 0 为未开始，1 为签到成功，2 为签退成功
     creditHours: dict[str, int] = None
 
     class Config:
-        orm_mode = True
         from_attributes = True#允许从对象属性中读取数据
 
 class UserCreate(UserBase):
@@ -30,7 +29,7 @@ class UserCreate(UserBase):
     code: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserLogin(BaseModel):
     """
@@ -41,4 +40,13 @@ class UserLogin(BaseModel):
     password: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class PageResponse(BaseModel):
+    """
+    分页响应模型
+    """
+    items: list[UserBase]
+    total: int
+    page: int
+    size: int
