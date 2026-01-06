@@ -1,8 +1,10 @@
-from pyecharts.charts import Pie
+from pyecharts.charts import Pie, Line, Tab
 from pyecharts import options as opts
 
 import requests
 import json
+
+from config import url, token
 
 class Student:
     def __init__(self,uid,name,identity,grade,major,class_,college,
@@ -27,10 +29,10 @@ def make_authenticated_request(token,
                                parameters: dict[str, str] = None,
                                request_body = None,
                                method="POST",
-                               url= "http://127.0.0.1:8000",
+                               _url= url,
                                ):
     print("=============>>>")
-    url = f"{url}{api_path}"
+    _url = f"{_url}{api_path}"
     # 请求头，包含认证token
     headers = {
         "Content-Type": "application/json",
@@ -39,11 +41,11 @@ def make_authenticated_request(token,
 
     if parameters:
         # 处理查询参数 - 修复URL参数拼接
-        separator = "&" if "?" in url else "?"
+        separator = "&" if "?" in _url else "?"
         for key, value in parameters.items():
-            url += f"{separator}{key}={value}"
+            _url += f"{separator}{key}={value}"
             separator = "&"
-    print(f"请求的url为{url}")
+    print(f"请求的url为{_url}")
 
     # 请求体JSON数据
     data = request_body
@@ -52,10 +54,10 @@ def make_authenticated_request(token,
         response = None
         if method == "POST":
             # 发送POST请求
-            response = requests.post(url, headers=headers, data=json.dumps(data))
+            response = requests.post(_url, headers=headers, data=json.dumps(data))
         elif method == "GET":
             # 发送GET请求
-            response = requests.get(url, headers=headers)
+            response = requests.get(_url, headers=headers)
 
         # 检查响应状态
         if response.status_code == 200:
@@ -72,15 +74,14 @@ def make_authenticated_request(token,
         print(f"请求发生错误: {e}")
         print("=============<<<")
 
-if __name__ == "__main__":
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNTA5MDUwMjAyIiwiZXhwIjoxNzY3NzE5MTExfQ.kwe_PnBjPkWBv5Wh_GpjQWWC__4b_LMonbPN5xsfLP8"
+def analyze_college_distribution() -> Pie:
     r = make_authenticated_request(token,
-                               api_path=f"/api/v1/record/daily-active-users-list",
-                               method="GET",)
+                                   api_path=f"/api/v1/record/daily-active-users-list",
+                                   method="GET", )
     students = []
     for i in r["active_users"]:
         tmp = make_authenticated_request(token,
-                                         parameters={"uid":i},
+                                         parameters={"uid": i},
                                          api_path=f"/api/v1/user/search",
                                          method="GET")
         tmp_student_object = Student(**tmp)
@@ -102,4 +103,57 @@ if __name__ == "__main__":
         .set_global_opts(title_opts=opts.TitleOpts(title="使用人员分析"))
         .set_series_opts(label_opts=opts.LabelOpts(font_size=18, font_family="KaiTi"))
     )
-    pie.render("pie.html")  # 生成 HTML 文件，直接打开即可
+    return pie
+
+def analyze_recent_daily_stats_line() -> Line:
+    r = make_authenticated_request(token,
+                                   api_path="/api/v1/record/recent-daily-stats",
+                                   method="GET")
+    # print(r)
+    # 模拟数据
+    r["stats_list"] = [
+        {'stat_date': '2026-01-06', 'dau_count': 3, 'new_users_count': 6},
+        {'stat_date': '2026-01-07', 'dau_count': 2, 'new_users_count': 6},
+        {'stat_date': '2026-01-08', 'dau_count': 5, 'new_users_count': 6},
+        {'stat_date': '2026-01-09', 'dau_count': 8, 'new_users_count': 6},
+        {'stat_date': '2026-01-10', 'dau_count': 2, 'new_users_count': 6},
+        {'stat_date': '2026-01-11', 'dau_count': 10, 'new_users_count': 6},
+    ]
+
+    print(r["stats_list"])
+    r["stats_list"] : list[dict]
+    date_list = [i["stat_date"] for i in r["stats_list"]] # 日期
+    # print(date_list)
+    dau_count = [i["dau_count"] for i in r["stats_list"]] # 日活数
+
+    line = (
+        Line()
+        .add_xaxis(date_list)
+        .add_yaxis("", dau_count)
+        .set_global_opts(
+            title_opts=opts.TitleOpts(title="日活"),
+            xaxis_opts=opts.AxisOpts(axislabel_opts=opts.LabelOpts(rotate=45)),
+            toolbox_opts=opts.ToolboxOpts(),
+
+            yaxis_opts=opts.AxisOpts(),
+        )
+        .set_series_opts(
+            label_opts=opts.LabelOpts(is_show=True),
+            linestyle_opts=opts.LineStyleOpts(width=2)
+        )
+    )
+    return line
+
+
+if __name__ == "__main__":
+    line = analyze_recent_daily_stats_line()
+    pie = analyze_college_distribution()
+
+
+    # 使用 Tab 组件组合图表
+    tab = Tab()
+    tab.add(pie, "使用者学院分布")
+    tab.add(line, "日在线人数")
+
+    # 渲染到同一个HTML文件
+    tab.render(path = "index.html")
