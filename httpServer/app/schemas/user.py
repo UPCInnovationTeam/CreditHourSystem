@@ -15,6 +15,7 @@ class UserBase(BaseModel):
     tribeId: list[int] =  None
     activityId: dict[int, int] = None   # str是活动id 0 为未开始，1 为签到成功，2 为签退成功
     creditHours: dict[str, int] = None
+    lottery_streak: int = 0  # 连续抽奖次数（未中大奖）
 
     class Config:
         from_attributes = True#允许从对象属性中读取数据
