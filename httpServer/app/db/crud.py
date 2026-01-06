@@ -496,7 +496,7 @@ async def join_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
         return {"message": "部落不存在"}
 
     current_members = tribe.members if tribe.members else []
-    if user.name in current_members:
+    if user.uid in current_members:
         return {"message": "用户已经在部落里面"}
 
     # 更新用户
@@ -504,7 +504,7 @@ async def join_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
     await update_user(db, user.uid, user)
 
     #构建新的成员列表
-    new_members = current_members + [user.name]
+    new_members = current_members + [user.uid]
     tribe.members = new_members
     tribe.memberNum = len(new_members)
 
@@ -529,8 +529,8 @@ async def quit_tribe_(db: AsyncSession, user: UserBase, tribe_id: int):
     tribe = result.scalar_one_or_none()
 
     current_members = tribe.members if tribe.members else []
-    if user.name in current_members:
-        current_members = [member for member in current_members if member != user.name]
+    if user.uid in current_members:
+        current_members = [member for member in current_members if member != user.uid]
 
     tribe.members = current_members
     tribe.memberNum = len(current_members)
