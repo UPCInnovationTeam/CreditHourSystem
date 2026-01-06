@@ -84,6 +84,7 @@ async def trade_credit(trade_credit: CreditHours,
 async def gift_credit():
     pass
 
+
 # 学时抽奖
 from app.core.config import lottery_config
 from app.dependencies.lottery import credit_lottery as cl
@@ -145,6 +146,7 @@ async def credit_lottery(
 @router.get("/lottery_config", response_model=dict[str, list[float]])
 async def get_lottery_config():
     return lottery_config
+
 
 
 

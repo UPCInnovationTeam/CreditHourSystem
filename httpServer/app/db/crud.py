@@ -220,12 +220,18 @@ async def delete_user(db: AsyncSession, uid: str) -> bool:
 
 async def login(db: AsyncSession, user: UserLogin) -> str:
     """
-    用户登录验证
-    :db:
-    :user:登录信息
-    :return:登录成功的用户信息
-    """
-    return await get_user_password(db, user.uid)
+       用户登录验证，同时记录活跃数据
+       :param db: 数据库会话
+       :param user: 登录信息
+       :return: 登录成功的用户密码
+       """
+    # 验证用户是否存在
+    password = await get_user_password(db, user.uid)
+
+    # 记录用户活跃数据
+    await record_user_login_activity(db, user.uid)
+
+    return password
 
 @deprecated("已经弃用")
 async def set_credit(db: AsyncSession, uid: str, credit: dict) :
@@ -637,4 +643,193 @@ async def get_page_users(db: AsyncSession, page: int, page_size: int) -> UserPag
         page=page,
         size=page_size,
     )
+
+
+from sqlalchemy import select, func
+from datetime import date
+from app.models.dbModels import DailyStatsSummary, User,DailyActiveUserStats
+
+
+async def record_user_login_activity(db: AsyncSession, user_id: str, platform: str = 'web'):
+    """
+    记录用户登录活跃数据
+    :param db: 数据库会话
+    :param user_id: 用户ID
+    :param platform: 平台标识
+    :return: 是否成功记录
+    """
+    today_str = date.today().strftime("%Y-%m-%d")
+
+    # 检查今天是否已记录该用户的活跃数据
+    result = await db.execute(
+        select(DailyActiveUserStats).where(
+            DailyActiveUserStats.user_id == user_id,
+            DailyActiveUserStats.stat_date == today_str,
+            DailyActiveUserStats.platform == platform
+        )
+    )
+    existing_record = result.scalar_one_or_none()
+
+    if not existing_record:
+        # 创建新的活跃记录
+        activity_record = DailyActiveUserStats(
+            stat_date=today_str,
+            user_id=user_id,
+            platform=platform
+        )
+        db.add(activity_record)
+        await db.commit()
+        await db.refresh(activity_record)
+        return True
+
+    return False  # 今天已记录过该用户活跃数据
+
+
+async def get_daily_active_users_count(db: AsyncSession, target_date: str = None) -> int:
+    """
+    获取指定日期的日活跃用户数
+    :param db: 数据库会话
+    :param target_date: 目标日期，格式：YYYY-MM-DD，默认为今天
+    :return: 日活跃用户数
+    """
+    if target_date is None:
+        target_date = date.today().strftime("%Y-%m-%d")
+
+    result = await db.execute(
+        select(func.count(DailyActiveUserStats.user_id.distinct()))
+        .where(DailyActiveUserStats.stat_date == target_date)
+    )
+    return result.scalar_one_or_none() or 0
+
+
+async def get_daily_active_users_list(db: AsyncSession, target_date: str = None) -> list:
+    """
+    获取指定日期的活跃用户列表
+    :param db: 数据库会话
+    :param target_date: 目标日期，格式：YYYY-MM-DD，默认为今天
+    :return: 活跃用户ID列表
+    """
+    if target_date is None:
+        target_date = date.today().strftime("%Y-%m-%d")
+
+    result = await db.execute(
+        select(DailyActiveUserStats.user_id)
+        .where(DailyActiveUserStats.stat_date == target_date)
+    )
+    return [row[0] for row in result.all()]
+
+
+async def get_daily_active_users_stats(db: AsyncSession, target_date: str = None) -> dict:
+    """
+    获取指定日期的详细活跃统计信息
+    :param db: 数据库会话
+    :param target_date: 目标日期，格式：YYYY-MM-DD，默认为今天
+    :return: 包含活跃用户数、新增用户数、累计用户数的字典
+    """
+    if target_date is None:
+        target_date = date.today().strftime("%Y-%m-%d")
+
+    # 获取当日活跃用户数
+    dau_count = await get_daily_active_users_count(db, target_date)
+
+    # 获取当日新增用户数
+    new_users_result = await db.execute(
+        select(func.count(User.uid))
+        .where(func.substring(User.registerTime, 1, 10) == target_date)
+    )
+    new_users_count = new_users_result.scalar_one_or_none() or 0
+
+    # 获取累计用户数
+    total_users_result = await db.execute(select(func.count(User.uid)))
+    total_users_count = total_users_result.scalar_one_or_none() or 0
+
+    return {
+        "stat_date": target_date,
+        "dau_count": dau_count,
+        "new_users_count": new_users_count,
+        "total_users_count": total_users_count
+    }
+
+
+async def get_recent_daily_stats(db: AsyncSession, days: int = 7) -> list:
+    """
+    获取最近几天的日活跃统计
+    :param db: 数据库会话
+    :param days: 天数，默认7天
+    :return: 最近几天的统计列表
+    """
+    from datetime import timedelta
+
+    # 计算开始日期
+    start_date = (date.today() - timedelta(days=days - 1)).strftime("%Y-%m-%d")
+
+    # 获取最近几天的活跃用户数
+    result = await db.execute(
+        select(
+            DailyActiveUserStats.stat_date,
+            func.count(DailyActiveUserStats.user_id.distinct()).label('dau_count')
+        )
+        .where(DailyActiveUserStats.stat_date >= start_date)
+        .group_by(DailyActiveUserStats.stat_date)
+        .order_by(DailyActiveUserStats.stat_date)
+    )
+
+    stats_list = []
+    for row in result.all():
+        stat_date = row.stat_date
+        dau_count = row.dau_count
+
+        # 获取当天新增用户数
+        new_users_result = await db.execute(
+            select(func.count(User.uid))
+            .where(func.substring(User.registerTime, 1, 10) == stat_date)
+        )
+        new_users_count = new_users_result.scalar_one_or_none() or 0
+
+        stats_list.append({
+            "stat_date": stat_date,
+            "dau_count": dau_count,
+            "new_users_count": new_users_count
+        })
+
+    return stats_list
+
+
+async def update_daily_stats_summary(db: AsyncSession, target_date: str = None):
+    """
+    更新日活汇总表
+    :param db: 数据库会话
+    :param target_date: 目标日期，格式：YYYY-MM-DD，默认为昨天
+    """
+    if target_date is None:
+        from datetime import timedelta
+        target_date = (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    # 获取统计信息
+    stats = await get_daily_active_users_stats(db, target_date)
+
+    # 检查是否已存在该日期的汇总记录
+    result = await db.execute(
+        select(DailyStatsSummary).where(DailyStatsSummary.stat_date == target_date)
+    )
+    existing_summary = result.scalar_one_or_none()
+
+    if existing_summary:
+        # 更新现有记录
+        existing_summary.dau_count = stats["dau_count"]
+        existing_summary.new_users_count = stats["new_users_count"]
+        existing_summary.total_users_count = stats["total_users_count"]
+    else:
+        # 创建新记录
+        summary = DailyStatsSummary(
+            stat_date=stats["stat_date"],
+            dau_count=stats["dau_count"],
+            new_users_count=stats["new_users_count"],
+            total_users_count=stats["total_users_count"]
+        )
+        db.add(summary)
+
+    await db.commit()
+
+
 
