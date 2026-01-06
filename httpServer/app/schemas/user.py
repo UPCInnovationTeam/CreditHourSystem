@@ -7,7 +7,7 @@ class UserBase(BaseModel):
     """
     uid: str
     name: str
-    identity: str
+    identity: str = "使用者"
     grade: str
     major: str
     class_: str
@@ -26,7 +26,7 @@ class UserCreate(UserBase):
     """
     email: str
     password: str | bytes
-    registerTime: str
+    registerTime: str = None
     code: str
 
     class Config:

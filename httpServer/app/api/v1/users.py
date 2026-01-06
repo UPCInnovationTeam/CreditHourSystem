@@ -154,11 +154,14 @@ async def get_users(page: int = Query(1, description="页数", ge=1),
     return await get_page_users(db, page, page_size)
 
 @router.post("/users/batch", response_model=dict)
-async def admin_batch_create_users(user_dicts:list[dict],
+async def admin_batch_create_users(user_dicts:list[UserCreate],
                                    current_user: UserBase = Depends(get_current_user),
                                    db: AsyncSession = Depends(get_db)):
     if current_user.identity != "管理员":
         raise HTTPException(status_code=400, detail=f"无权限")
+    for i in range(len(user_dicts)):
+        user_dicts[i] : dict = user_dicts[i].model_dump()
+    user_dicts : list[dict]
     created_users = await bulk_create_users_from_dicts(db, user_dicts)
     return {
         "massage": "批量创建用户成功",
