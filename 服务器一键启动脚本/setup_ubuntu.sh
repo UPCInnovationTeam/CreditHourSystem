@@ -54,25 +54,19 @@ git config --global http.connectTimeout 30
 git config --global http.lowSpeedLimit 1000
 git config --global http.lowSpeedTime 60
 
-# 尝试克隆，最多重试3次
-MAX_RETRIES=3
-RETRY_COUNT=0
-while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    echo ">>> 尝试克隆项目（尝试 $((RETRY_COUNT+1))/$MAX_RETRIES）..."
-    if sudo git clone https://github.com/UPCInnovationTeam/CreditHourSystem.git; then
-        echo "项目克隆成功"
-        break
+# 尝试从 GitHub 克隆
+echo ">>> 尝试从 GitHub 克隆项目..."
+if sudo git clone https://github.com/UPCInnovationTeam/CreditHourSystem.git; then
+    echo "GitHub 克隆成功"
+else
+    echo "GitHub 克隆失败，尝试从 Gitee 镜像克隆..."
+    if sudo git clone https://gitee.com/sudaowan/CreditHourSystem.git; then
+        echo "Gitee 克隆成功"
     else
-        RETRY_COUNT=$((RETRY_COUNT+1))
-        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-            echo "克隆失败，等待 10 秒后重试..."
-            sleep 10
-        else
-            echo "错误: 克隆失败，已超过最大重试次数"
-            exit 1
-        fi
+        echo "错误: 项目克隆失败，请检查网络连接"
+        exit 1
     fi
-done
+fi
 
 sudo chown -R $USER:$USER /opt/CreditHourSystem
 
@@ -92,6 +86,11 @@ pip install -r requirements.txt
 # 安装额外必需的依赖（处理文件上传）
 pip install python-multipart
 deactivate
+
+# 修复 Python 3.12 兼容性问题
+echo ">>> 修复 Python 3.12 兼容性问题..."
+# 修复 deprecated 导入问题（warnings -> typing_extensions）
+find /opt/CreditHourSystem/httpServer/app -name "*.py" -exec sed -i 's/from warnings import deprecated/from typing_extensions import deprecated/g' {} \;
 
 # 复制配置文件
 echo ">>> 复制配置文件到 app/core 目录..."
