@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
+from app.core.security import get_current_user
+from app.schemas.user import UserBase
 from app.db import crud
 from typing import List, Dict, Any
 from datetime import date, timedelta
@@ -11,6 +13,7 @@ router = APIRouter(prefix="/record", tags=["日活统计"])
 @router.get("/daily-active-users", summary="获取指定日期的日活跃用户数")
 async def get_daily_active_users(
         target_date: str = None,
+        current_user: UserBase = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ):
     """
@@ -31,6 +34,7 @@ async def get_daily_active_users(
 @router.get("/daily-active-users-list", summary="获取指定日期的活跃用户列表")
 async def get_daily_active_users_list(
         target_date: str = None,
+        current_user: UserBase = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ):
     """
@@ -52,6 +56,7 @@ async def get_daily_active_users_list(
 @router.get("/daily-stats", summary="获取指定日期的详细活跃统计")
 async def get_daily_stats(
         target_date: str = None,
+        current_user: UserBase = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ):
     """
@@ -68,6 +73,7 @@ async def get_daily_stats(
 @router.get("/recent-daily-stats", summary="获取最近几天的日活跃统计")
 async def get_recent_daily_stats(
         days: int = 7,
+        current_user: UserBase = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ):
     """
@@ -89,6 +95,7 @@ async def get_recent_daily_stats(
 @router.get("/daily-summary", summary="获取日活汇总数据")
 async def get_daily_summary(
         target_date: str = None,
+        current_user: UserBase = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ):
     """
@@ -125,6 +132,7 @@ async def get_daily_summary(
 @router.post("/update-daily-summary", summary="更新日活汇总表")
 async def update_daily_summary(
         target_date: str = None,
+        current_user: UserBase = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ):
     """

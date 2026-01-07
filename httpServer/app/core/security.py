@@ -26,7 +26,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)   # 返回令牌
 
 # 验证token，获取用户信息
-async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> UserBase: # 使用oauth2_scheme依赖项获取token
+async def get_current_user(token: str = Depends(oauth2_scheme),
+                           db: AsyncSession = Depends(get_db)) -> UserBase: # 使用oauth2_scheme依赖项获取token
     """
     验证token，获取用户信息
     :param token: 用户token

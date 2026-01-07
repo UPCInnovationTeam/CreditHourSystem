@@ -12,6 +12,8 @@ from app.db.crud import set_credit as crud_set_credit, update_user
 from app.db.database import get_db
 
 from fastapi import Query, HTTPException
+from app.core.security import get_current_user
+from app.schemas.user import UserBase
 import random
 from app.db.crud import get_activity as get_activity_by_id
 from app.schemas.activity import ActivityBase
@@ -81,7 +83,8 @@ async def trade_credit(trade_credit: CreditHours,
 
 # 学时赠送
 @router.post("/gift")
-async def gift_credit():
+async def gift_credit(current_user: UserBase = Depends(get_current_user),
+                      db: AsyncSession = Depends(get_db)):
     pass
 
 
@@ -144,7 +147,8 @@ async def credit_lottery(
     }
 
 @router.get("/lottery_config", response_model=dict[str, list[float]])
-async def get_lottery_config():
+async def get_lottery_config(current_user: UserBase = Depends(get_current_user),
+                      db: AsyncSession = Depends(get_db)):
     return lottery_config
 
 
