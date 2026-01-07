@@ -26,7 +26,7 @@ class Student:
 
 def make_authenticated_request(token,
                                api_path="",
-                               parameters: dict[str, str] = None,
+                               parameters: dict = None,
                                request_body = None,
                                method="POST",
                                _url= url,
@@ -95,7 +95,7 @@ def analyze_college_distribution() -> Pie:
             colleges[i.get_college()] = 1
     # print(colleges)
     # 模拟数据
-    colleges = {"软件学院": 10, "经济管理学院": 20, "法学院": 30, "物理与电子学院": 40, "生命科学学院": 50}
+    # colleges = {"软件学院": 10, "经济管理学院": 20, "法学院": 30, "物理与电子学院": 40, "生命科学学院": 50}
 
     pie = (
         Pie()
@@ -111,14 +111,14 @@ def analyze_recent_daily_stats_line() -> Line:
                                    method="GET")
     # print(r)
     # 模拟数据
-    r["stats_list"] = [
-        {'stat_date': '2026-01-06', 'dau_count': 3, 'new_users_count': 6},
-        {'stat_date': '2026-01-07', 'dau_count': 2, 'new_users_count': 6},
-        {'stat_date': '2026-01-08', 'dau_count': 5, 'new_users_count': 6},
-        {'stat_date': '2026-01-09', 'dau_count': 8, 'new_users_count': 6},
-        {'stat_date': '2026-01-10', 'dau_count': 2, 'new_users_count': 6},
-        {'stat_date': '2026-01-11', 'dau_count': 10, 'new_users_count': 6},
-    ]
+    # r["stats_list"] = [
+    #     {'stat_date': '2026-01-06', 'dau_count': 3, 'new_users_count': 6},
+    #     {'stat_date': '2026-01-07', 'dau_count': 2, 'new_users_count': 6},
+    #     {'stat_date': '2026-01-08', 'dau_count': 5, 'new_users_count': 6},
+    #     {'stat_date': '2026-01-09', 'dau_count': 8, 'new_users_count': 6},
+    #     {'stat_date': '2026-01-10', 'dau_count': 2, 'new_users_count': 6},
+    #     {'stat_date': '2026-01-11', 'dau_count': 10, 'new_users_count': 6},
+    # ]
 
     print(r["stats_list"])
     r["stats_list"] : list[dict]

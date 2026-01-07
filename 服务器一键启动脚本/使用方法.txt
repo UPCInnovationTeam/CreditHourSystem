@@ -1,0 +1,2 @@
+chmod +x setup_ubuntu.sh
+sudo ./setup_ubuntu.sh
