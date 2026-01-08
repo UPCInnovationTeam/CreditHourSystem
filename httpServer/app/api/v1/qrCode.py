@@ -121,19 +121,7 @@ async def checkin_qr(
     if not verify_token(event_id, token, timestamp):
         raise HTTPException(status_code=400, detail="无效的二维码")
 
-    return await check_in_
-
-
-
-
-
-
-
-
-
-
-
-    activity(db, uid, event_id)
+    return await check_in_activity(db, uid, event_id)
 
 @router.get("/checkout")
 async def checkout_qr(

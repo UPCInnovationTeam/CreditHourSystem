@@ -58,12 +58,22 @@ def analyse_activity_participation_college_distribution(id_ = 1) -> Pie:
                                    api_path=f"/api/v1/activity/id",
                                    method="GET", )
 
-    r["participantsIDs"] : list[str]
+    participants_ids: list[str] = r.get("participantsIDs", [])
+    title = r.get("title", "")
+
+    # Handle activities with no participants to avoid empty data for the pie chart.
+    if not participants_ids:
+        return (
+            Pie()
+            .add("", [("暂无参与者", 1)], radius=["40%", "75%"])
+            .set_global_opts(title_opts=opts.TitleOpts(title=f"{title}参与者学院分布"))
+            .set_series_opts(label_opts=opts.LabelOpts(font_size=18, font_family="KaiTi"))
+        )
+
     students = [make_authenticated_request(token,
                                            parameters={"uid": i},
                                            api_path=f"/api/v1/user/search",
-                                           method="GET") for i in r["participantsIDs"]]
-    # print(students)
+                                           method="GET") for i in participants_ids]
     students_object = [Student(**i) for i in students]
     colleges = {}
     for i in students_object:
@@ -75,7 +85,7 @@ def analyse_activity_participation_college_distribution(id_ = 1) -> Pie:
     pie = (
         Pie()
         .add("", data_pair=list(colleges.items()), radius=["40%", "75%"])
-        .set_global_opts(title_opts=opts.TitleOpts(title=f"{r["title"]}参与者学院分布"))
+        .set_global_opts(title_opts=opts.TitleOpts(title=f"{title}参与者学院分布"))
         .set_series_opts(label_opts=opts.LabelOpts(font_size=18, font_family="KaiTi"))
     )
     return pie
